@@ -100,6 +100,71 @@ export const SQL = {
 
   activar:    `UPDATE usuario SET estado='activo', updated_at=now() WHERE id=$1 RETURNING id, email, estado;`,
   
-   eliminar:   `UPDATE usuario SET deleted_at=now(), updated_at=now() WHERE id=$1 RETURNING id, email, deleted_at;`,
+  eliminar:    `UPDATE usuario SET deleted_at=now(), updated_at=now() WHERE id=$1 RETURNING id, email, deleted_at;`,
 
+  hardDeleteUsuario: `DELETE FROM usuario WHERE id=$1 RETURNING id;`,
+
+   panelUsuarioBase: `
+    SELECT
+      u.id, u.email, u.estado, u.rol_id, r.nombre AS rol_nombre,
+      u.ultimo_login, u.created_at,
+      p.full_name, p.acerca_de, p.foto,
+      b.id AS billetera_id, b.saldo_disponible, b.saldo_retenido
+    FROM usuario u
+    LEFT JOIN rol r            ON r.id = u.rol_id
+    LEFT JOIN perfil_usuario p ON p.usuario_id = u.id
+    LEFT JOIN billetera b      ON b.usuario_id = u.id
+    WHERE u.id = $1
+  `,
+
+  // ---- Métricas rápidas
+  panelMetricas: `
+    SELECT
+      (SELECT COUNT(*) FROM publicaciones pub WHERE pub.usuario_id=$1 AND pub.deleted_at IS NULL) AS publicaciones_activas,
+      (SELECT COUNT(*) FROM intercambios i WHERE i.comprador_id=$1 OR i.vendedor_id=$1)         AS intercambios_totales,
+      (SELECT COALESCE(SUM(creditos_obtenidos),0) FROM compras_creditos cc WHERE cc.usuario_id=$1) AS total_creditos_comprados
+  `,
+
+  // ---- Impacto (si existe)
+  panelImpacto: `
+    SELECT *
+    FROM impacto_usuario
+    WHERE usuario_id = $1
+  `,
+
+  // ---- Publicaciones con foto principal (paginado)
+  panelPublicaciones: `
+    SELECT
+      pub.id, pub.titulo, pub.descripcion, pub.valor_creditos,
+      pub.created_at,
+      c.nombre  AS categoria,
+      e.nombre  AS estado_nombre,
+      (
+        SELECT f.foto_url
+        FROM fotos f
+        WHERE f.publicacion_id = pub.id
+        ORDER BY f.es_principal DESC, f.orden ASC, f.id ASC
+        LIMIT 1
+      ) AS foto_principal
+    FROM publicaciones pub
+    JOIN categoria c          ON c.id = pub.categoria_id
+    JOIN estado_publicacion e ON e.id = pub.estado_id
+    WHERE pub.usuario_id = $1 AND pub.deleted_at IS NULL
+    ORDER BY pub.created_at DESC
+    LIMIT $2 OFFSET $3
+  `,
+
+  // ---- Movimientos de billetera (paginado)
+  panelMovimientos: `
+    SELECT
+      m.id, m.fecha_movimiento, m.monto, m.saldo_anterior, m.saldo_posterior,
+      m.descripcion, m.tipo_referencia, m.referencia_id,
+      tm.codigo AS tipo_codigo, tm.descripcion AS tipo_descripcion, tm.es_debito
+    FROM movimientos m
+    JOIN tipos_movimiento tm ON tm.id = m.tipo_mov_id
+    WHERE m.billetera_user_id = $1
+    ORDER BY m.fecha_movimiento DESC, m.id DESC
+    LIMIT $2 OFFSET $3
+  `,
 };
+

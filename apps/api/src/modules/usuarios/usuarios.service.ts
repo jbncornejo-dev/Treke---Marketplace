@@ -2,6 +2,8 @@ import { pool } from '../../config/database/database';
 import { PoolClient } from 'pg';
 import { SQL } from './usuarios.sql';
 
+
+
 // Helper local de transacciones usando TU pool
 async function withTx<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
@@ -111,6 +113,53 @@ export async function suspenderUsuario(_actorId: number, usuarioId: number) {
 }
 
 export async function eliminarUsuario(_actorId: number, usuarioId: number) {
-  const r = await withTx(async (client) => client.query(SQL.eliminar, [usuarioId]));
-  return r.rows[0];
+  const r = await withTx(async (client) =>
+    client.query(SQL.hardDeleteUsuario, [usuarioId])
+  );
+  if (!r.rowCount) throw new Error('Usuario no encontrado');
+  return r.rows[0]; // { id }
+}
+export async function getPanel(
+  usuarioId: number,
+  pubsLimit = 12,
+  pubsOffset = 0,
+  movsLimit = 20,
+  movsOffset = 0
+) {
+  return withTx(async (client) => {
+    const base = await client.query(SQL.panelUsuarioBase, [usuarioId]);
+    if (!base.rowCount) throw new Error('Usuario no encontrado');
+
+    const metricas = await client.query(SQL.panelMetricas, [usuarioId]);
+    const impacto  = await client.query(SQL.panelImpacto,  [usuarioId]);
+    const pubs     = await client.query(SQL.panelPublicaciones, [usuarioId, pubsLimit, pubsOffset]);
+
+    let movimientos: any[] = [];
+    const billeteraId = base.rows[0].billetera_id;
+    if (billeteraId) {
+      const mov = await client.query(SQL.panelMovimientos, [billeteraId, movsLimit, movsOffset]);
+      movimientos = mov.rows.map((r: any) => ({
+        ...r,
+        monto_con_signo: r.es_debito ? -Number(r.monto) : Number(r.monto),
+      }));
+    }
+
+    const b = base.rows[0];
+    return {
+      usuario: {
+        id: b.id, email: b.email, estado: b.estado, rol_id: b.rol_id, rol_nombre: b.rol_nombre,
+        full_name: b.full_name, acerca_de: b.acerca_de, foto: b.foto,
+        ultimo_login: b.ultimo_login, created_at: b.created_at,
+      },
+      billetera: {
+        id: b.billetera_id,
+        saldo_disponible: b.saldo_disponible ?? 0,
+        saldo_retenido:   b.saldo_retenido ?? 0,
+      },
+      metricas: metricas.rows[0],
+      impacto: impacto.rows[0] ?? null,
+      publicaciones: pubs.rows,
+      movimientos,
+    };
+  });
 }

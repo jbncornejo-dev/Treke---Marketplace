@@ -3,6 +3,8 @@ import Landing from "./pages/Home/Landing";
 import AuthPage from "./pages/auth/Auth"; // si no tienes index.tsx, crea rutas a Register/Login directo
 import Marketplace from "./pages/Marketplace/Marketplace";
 import AdminUsers from "./pages/admin/AdminUsers";
+import Profile from "./pages/profile/Profile";
+
 import './index.css';
 
 
@@ -25,6 +27,7 @@ export default function App() {
           <Route path="/auth" element={<AuthPage />} />
           {/* ... */}
           <Route path="/admin" element={<AdminUsers />} />  
+          <Route path="/perfil" element={<Profile />} />
           {/* Si quieres exponer Register/Login por separado: */}
           {/* <Route path="/auth/register" element={<Register />} /> */}
           {/* <Route path="/auth/login" element={<Login />} /> */}

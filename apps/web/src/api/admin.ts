@@ -10,8 +10,9 @@ export type Usuario = {
 };
 
 export async function listarUsuarios(): Promise<Usuario[]> {
-  const r = await api.get('/api/admin/usuarios');
-  return r as Usuario[];
+  const resp = await api.get<{ ok:boolean; data: Usuario[] } | Usuario[]>('/api/admin/usuarios');
+  // tu controlador puede devolver {ok, data} o arreglo directo — normalízalo:
+  return Array.isArray(resp) ? resp : (resp as any).data || [];
 }
 
 export async function crearUsuario(payload: {
@@ -28,6 +29,7 @@ export async function cambiarRol(id: number, nuevoRolId: number) {
 export async function suspender(id: number) {
   return api.patch(`/api/admin/usuarios/${id}/suspender`);
 }
+
 export async function eliminar(id: number) {
   return api.del(`/api/admin/usuarios/${id}`);
 }
@@ -40,9 +42,6 @@ export async function updateEmail(id: number, email: string) {
   return api.patch(`/api/usuarios/${id}/email`, { email });
 }
 
-
-
-// Helper
 export const ROL_LABEL: Record<number, string> = {
   10001: 'Usuario',
   10002: 'Emprendedor',

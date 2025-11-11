@@ -96,12 +96,26 @@ export const UsuariosController = {
   },
 
    eliminar: async (req: Request, res: Response) => {
+  try {
+    const usuarioId = Number(req.params.id);
+    const data = await svc.eliminarUsuario(0, usuarioId); // <- hard delete
+    return res.json({ ok: true, data });
+  } catch (e:any) {
+    return res.status(400).json({ ok:false, error: e.message });
+  }
+},
+ panel: async (req: Request, res: Response) => {
     try {
-      const usuarioId = +req.params.id;
-      const data = await svc.eliminarUsuario(0, usuarioId);
-      res.json({ ok: true, data });
-    } catch (e:any) {
-      res.status(400).json({ ok:false, error: e.message });
+      const id = Number(req.params.id);
+      const pubsLimit = Number(req.query.pubs_limit ?? 12);
+      const pubsOffset = Number(req.query.pubs_offset ?? 0);
+      const movsLimit = Number(req.query.movs_limit ?? 20);
+      const movsOffset = Number(req.query.movs_offset ?? 0);
+
+      const data = await svc.getPanel(id, pubsLimit, pubsOffset, movsLimit, movsOffset);
+      return res.json({ ok: true, data });
+    } catch (e: any) {
+      return res.status(400).json({ ok: false, error: e.message });
     }
   },
 };

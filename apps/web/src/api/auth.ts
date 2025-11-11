@@ -8,6 +8,8 @@ export type RegisterInput = {
   acepta_terminos: boolean;
   rol_id?: number; // opcional
 };
+export type LoginResp = { ok?: boolean; user: any; token?: string };
+
 
 export async function login(input: LoginInput) {
   // backend: POST /api/auth/login

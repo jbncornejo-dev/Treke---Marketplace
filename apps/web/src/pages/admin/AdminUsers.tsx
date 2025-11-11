@@ -1,24 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Header from "../../components/Header";
-import { getCurrentUser } from "../../api/auth";
 import * as Admin from "../../api/admin";
 
-
 export default function AdminUsers() {
-  const me = getCurrentUser();
-  const isAdmin = me?.rol_id === 10003 || me?.id === 20005;
-
   const [rows, setRows] = useState<Admin.Usuario[]>([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string>("");
 
   const [form, setForm] = useState({ email:"", full_name:"", password:"", rol_id:10001, acepta_terminos:true });
   const [edit, setEdit] = useState<{ id:number; full_name:string; email:string; rol_id:number }|null>(null);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    refresh();
-  }, [isAdmin]);
 
   async function refresh() {
     setLoading(true);
@@ -32,18 +22,7 @@ export default function AdminUsers() {
     }
   }
 
-  if (!isAdmin) {
-    return (
-      <div className="min-h-dvh bg-neutral-950 text-neutral-100">
-        <Header title="Admin" />
-        <main className="mx-auto max-w-6xl p-6">
-          <div className="rounded-xl border border-neutral-800 p-6">
-            <p>No tienes permisos para ver este panel.</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  useEffect(() => { refresh(); }, []);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -170,7 +149,7 @@ export default function AdminUsers() {
           )}
         </section>
 
-        {/* Modal simple de Edición */}
+        {/* Modal Edición */}
         {edit && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4">
             <div className="w-full max-w-lg rounded-2xl border border-neutral-700 bg-neutral-950 p-5 space-y-3">
