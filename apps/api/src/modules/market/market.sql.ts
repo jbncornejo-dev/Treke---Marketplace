@@ -116,4 +116,49 @@ export const MarketSQL = {
   // catálogos
   cats: `SELECT id, nombre FROM categoria ORDER BY nombre`,
   estados: `SELECT id, nombre FROM estado_publicacion ORDER BY id`,
+
+    // Factores ecológicos disponibles para marcar en la creación de publicaciones
+  factores: `
+    SELECT
+      id,
+      nombre_factor,
+      unidad_medida,
+      desc_calc
+    FROM factores_ecologicos
+    ORDER BY id;
+  `,
+
+  // Creación de publicación básica
+  createPublication: `
+    INSERT INTO publicaciones (
+      titulo,
+      descripcion,
+      valor_creditos,
+      ubicacion_texto,
+      latitud,
+      longitud,
+      peso_aprox_kg,
+      usuario_id,
+      categoria_id,
+      estado_id
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    RETURNING id;
+  `,
+
+  // Inserción de fotos asociadas
+  insertFoto: `
+    INSERT INTO fotos (publicacion_id, foto_url, orden, es_principal)
+    VALUES ($1, $2, $3, $4);
+  `,
+
+  // Buscar id de estado por nombre (por ej. "disponible")
+  estadoPorNombre: `
+    SELECT id
+    FROM estado_publicacion
+    WHERE nombre = $1
+    LIMIT 1;
+  `,
+
 };
+

@@ -8,6 +8,7 @@ import MarketDetailPage from "./pages/Marketplace/MarketDetail";
 import ReportsRouter from "./pages/reports/ReportsRouter";
 import GeneralReports from "./pages/reports/ReportsGeneral";
 import AdminMonetization from "./pages/reports/AdminMonetizacion";
+import MarketCreate from "./pages/Marketplace/MarketCreate";
 
 
 
@@ -63,7 +64,7 @@ export default function App() {
           <Route path="/reports" element={<ReportsRouter />} />
           <Route path="/reportesgeneral" element={<GeneralReports />} />
           <Route path="/admin/reportes/monetizacion" element={<AdminMonetization />} />
-
+          <Route path="/market/nueva" element={<MarketCreate />} />
         </Routes>
       </div>
     </BrowserRouter>

@@ -70,3 +70,109 @@ export async function categorias() {
 export async function estadosPublicacion() {
   return withTx(async (client) => (await client.query(MarketSQL.estados)).rows);
 }
+
+// ================================
+// NUEVOS TIPOS Y SERVICIOS
+// ================================
+
+export type CreatePublicationInput = {
+  titulo: string;
+  descripcion: string;
+  valor_creditos: number;
+  ubicacion_texto: string;
+  latitud?: number | null;
+  longitud?: number | null;
+  peso_aprox_kg?: number | null;
+  categoria_id: number;
+  usuario_id: number;
+  estado_id?: number | null;
+  /**
+   * ids de factores_ecologicos marcados en el formulario
+   * (CO2, energía, agua, residuos). Se usan para reportes
+   * y UI, pero el cálculo de impacto sigue dependiendo de
+   * categoria + peso + equivalencias_categoria.
+   */
+  factor_ids?: number[];
+  /**
+   * Si el usuario marca "ninguna", ignoramos factor_ids
+   * y tratamos la publicación como sin impacto.
+   */
+  sin_impacto?: boolean;
+  /**
+   * URLs de las imágenes (por ahora como strings;
+   * luego las puedes integrar con tu flujo de upload).
+   */
+  fotos?: string[];
+};
+
+export async function factoresEcologicos() {
+  return withTx(async (client) => {
+    const r = await client.query(MarketSQL.factores);
+    return r.rows;
+  });
+}
+
+export async function createPublication(input: CreatePublicationInput) {
+  return withTx(async (client) => {
+    const {
+      titulo,
+      descripcion,
+      valor_creditos,
+      ubicacion_texto,
+      latitud = null,
+      longitud = null,
+      peso_aprox_kg = 0,
+      categoria_id,
+      usuario_id,
+      estado_id,
+      factor_ids = [],
+      sin_impacto = false,
+      fotos = [],
+    } = input;
+
+    if (!titulo || !descripcion || !ubicacion_texto) {
+      throw new Error("titulo, descripcion y ubicacion_texto son requeridos");
+    }
+    if (!categoria_id) throw new Error("categoria_id requerido");
+    if (!usuario_id) throw new Error("usuario_id requerido");
+
+    // Estado por defecto "disponible" si no viene estado_id
+    let finalEstadoId = estado_id ?? null;
+    if (!finalEstadoId) {
+      const rEstado = await client.query(MarketSQL.estadoPorNombre, ["disponible"]);
+      if (!rEstado.rows[0]) {
+        throw new Error("No se encontró estado_publicacion 'disponible'");
+      }
+      finalEstadoId = rEstado.rows[0].id as number;
+    }
+
+    // Crear publicación
+    const pubRes = await client.query(MarketSQL.createPublication, [
+      titulo,
+      descripcion,
+      valor_creditos,
+      ubicacion_texto,
+      latitud,
+      longitud,
+      peso_aprox_kg,
+      usuario_id,
+      categoria_id,
+      finalEstadoId,
+    ]);
+    const pubId: number = pubRes.rows[0].id;
+
+    // Insertar fotos (primera es principal)
+    for (let i = 0; i < fotos.length; i++) {
+      const url = fotos[i];
+      if (!url) continue;
+      await client.query(MarketSQL.insertFoto, [pubId, url, i, i === 0]);
+    }
+
+    // NOTA: aquí podrías usar factor_ids y sin_impacto para actualizar
+    // campos agregados o para lógica de reportes. No creamos nuevas tablas,
+    // solo dejamos registrados los ids que vinieron en el input si quieres
+    // usarlos para logs/metadata más adelante.
+
+    return { id: pubId };
+  });
+}

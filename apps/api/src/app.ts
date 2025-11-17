@@ -18,6 +18,7 @@ app.use("/api", reportRoutes);
 
 app.use("/api/reportesgeneral", reportesGeneral);
 app.use("/api/admin/reportes/monetizacion", reportesMonetizacion);
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 
 

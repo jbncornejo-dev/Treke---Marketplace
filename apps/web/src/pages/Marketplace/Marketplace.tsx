@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Header from "../../components/Header";
 import { list, type MarketItem, type MarketListResp } from "../../api/market";
+import { useNavigate } from "react-router-dom";
+
+
 
 type SortKey = "recent" | "price_asc" | "price_desc" | "near";
 
@@ -10,6 +13,7 @@ export default function Marketplace() {
   const [minCred, setMinCred] = useState<number | null>(null);
   const [maxCred, setMaxCred] = useState<number | null>(null);
   const [sort, setSort] = useState<SortKey>("recent");
+  const navigate = useNavigate();
 
   const [items, setItems] = useState<MarketItem[]>([]);
   const [page, setPage] = useState<{ total: number; limit: number; offset: number; has_more: boolean }>({ total: 0, limit: 12, offset: 0, has_more: false });
@@ -44,6 +48,14 @@ export default function Marketplace() {
     <div className="min-h-dvh bg-neutral-950 text-neutral-100">
       <Header title="Marketplace" />
       <main className="mx-auto max-w-6xl p-4 space-y-4">
+        <div className="flex justify-end">
+          <button
+            onClick={() => navigate("/market/nueva")}
+            className="mb-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500"
+          >
+          Crear publicación
+          </button>
+        </div>
 
         {/* Filtros */}
         <div className="rounded-2xl border border-neutral-800 p-3 grid md:grid-cols-5 gap-2">
