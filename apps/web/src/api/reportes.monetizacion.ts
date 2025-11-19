@@ -28,7 +28,11 @@ export type SaldoUsuario = {
 };
 
 export type ConsumoVsGeneracion = {
-  origen: "compra_directa" | "generado_intercambios" | "gastado_intercambios" | "otros";
+  origen:
+    | "compra_directa"
+    | "generado_intercambios"
+    | "gastado_intercambios"
+    | "otros";
   total: string | number;
 };
 
@@ -39,20 +43,46 @@ export type Suscripciones = {
   ratio_activas: string | number | null;
 };
 
-export const getIngresosTotal = () =>
-  api.get<IngresosTotal>(`/api/admin/reportes/monetizacion/ingresos/total`);
+// Wrappers que devuelven data
 
-export const getIngresosMes = () =>
-  api.get<IngresosMes[]>(`/api/admin/reportes/monetizacion/ingresos/mes`);
+export const getIngresosTotal = async () => {
+  const r = await api.get<{ ok: boolean; data: IngresosTotal }>(
+    `/api/admin/reportes/monetizacion/ingresos/total`
+  );
+  return (r as any).data ?? (r as any);
+};
 
-export const getCreditosPorUsuario = () =>
-  api.get<CreditosPorUsuario[]>(`/api/admin/reportes/monetizacion/creditos/por-usuario`);
+export const getIngresosMes = async () => {
+  const r = await api.get<{ ok: boolean; data: IngresosMes[] }>(
+    `/api/admin/reportes/monetizacion/ingresos/por-mes`
+  );
+  return (r as any).data ?? (r as any);
+};
 
-export const getSaldos = () =>
-  api.get<SaldoUsuario[]>(`/api/admin/reportes/monetizacion/saldos`);
+export const getCreditosPorUsuario = async () => {
+  const r = await api.get<{ ok: boolean; data: CreditosPorUsuario[] }>(
+    `/api/admin/reportes/monetizacion/creditos/comprados-por-usuario`
+  );
+  return (r as any).data ?? (r as any);
+};
 
-export const getConsumoVsGeneracion = () =>
-  api.get<ConsumoVsGeneracion[]>(`/api/admin/reportes/monetizacion/consumo-vs-generacion`);
+export const getSaldos = async () => {
+  const r = await api.get<{ ok: boolean; data: SaldoUsuario[] }>(
+    `/api/admin/reportes/monetizacion/creditos/saldos`
+  );
+  return (r as any).data ?? (r as any);
+};
 
-export const getSuscripciones = () =>
-  api.get<Suscripciones>(`/api/admin/reportes/monetizacion/suscripciones`);
+export const getConsumoVsGeneracion = async () => {
+  const r = await api.get<{ ok: boolean; data: ConsumoVsGeneracion[] }>(
+    `/api/admin/reportes/monetizacion/consumo-vs-generacion`
+  );
+  return (r as any).data ?? (r as any);
+};
+
+export const getSuscripciones = async () => {
+  const r = await api.get<{ ok: boolean; data: Suscripciones }>(
+    `/api/admin/reportes/monetizacion/suscripciones/adopcion`
+  );
+  return (r as any).data ?? (r as any);
+};

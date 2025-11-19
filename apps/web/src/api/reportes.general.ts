@@ -40,17 +40,88 @@ export type ResumenSistema = {
   };
 };
 
-export const getRanking = (limit = 10) =>
-  api.get<RankingItem[]>(`/api/reportes/general/participacion?limit=${limit}`);
+/** NUEVAS INTERFACES para los otros indicadores */
 
-export const getInactivos = (days = 30) =>
-  api.get<InactivoItem[]>(`/api/reportes/general/inactivos?days=${days}`);
+export type ImpactoPorCategoriaItem = {
+  categoria_id: number;
+  categoria: string;
+  nombre_factor: string;
+  unidad_medida: string;
+  total_peso_kg: string | number | null;
+  valor_por_kg: string | number | null;
+  total_impacto: string | number | null;
+};
 
-export const getImpacto = () =>
-  api.get<ImpactoTotal>(`/api/reportes/general/impacto`);
+export type ActividadSostenibleItem = {
+  total_usuarios_participantes: number;
+  total_creditos_otorgados: string | number | null;
+  tipo_actividad: string;
+};
 
-export const getIntercambiosPorCat = () =>
-  api.get<IntercambiosPorCat[]>(`/api/reportes/general/intercambios/categorias`);
+export type UsuariosActivosRolItem = {
+  rol_id: number;
+  rol: string;
+  usuarios_activos_30d: number;
+};
 
-export const getResumen = () =>
-  api.get<ResumenSistema>(`/api/reportes/general/resumen`);
+// ==========================
+// Wrappers que devuelven data
+// ==========================
+
+export const getRanking = async (limit = 10) => {
+  const r = await api.get<{ ok: boolean; data: RankingItem[] }>(
+    `/api/reportesgeneral/ranking?limit=${limit}`
+  );
+  return (r as any).data ?? (r as any);
+};
+
+export const getInactivos = async (days = 30) => {
+  const r = await api.get<{ ok: boolean; data: InactivoItem[] }>(
+    `/api/reportesgeneral/inactivos?days=${days}`
+  );
+  return (r as any).data ?? (r as any);
+};
+
+export const getImpacto = async () => {
+  const r = await api.get<{ ok: boolean; data: ImpactoTotal }>(
+    `/api/reportesgeneral/impacto-total`
+  );
+  return (r as any).data ?? (r as any);
+};
+
+export const getIntercambiosPorCat = async () => {
+  const r = await api.get<{ ok: boolean; data: IntercambiosPorCat[] }>(
+    `/api/reportesgeneral/intercambios-categoria`
+  );
+  return (r as any).data ?? (r as any);
+};
+
+export const getResumen = async () => {
+  const r = await api.get<{ ok: boolean; data: ResumenSistema }>(
+    `/api/reportesgeneral/ratio`
+  );
+  return (r as any).data ?? (r as any);
+};
+
+// NUEVOS endpoints
+
+export const getImpactoPorCategoria = async () => {
+  const r = await api.get<{ ok: boolean; data: ImpactoPorCategoriaItem[] }>(
+    `/api/reportesgeneral/impacto-categoria`
+  );
+  return (r as any).data ?? (r as any);
+};
+
+export const getActividadesSostenibles = async () => {
+  const r = await api.get<{ ok: boolean; data: ActividadSostenibleItem[] }>(
+    `/api/reportesgeneral/actividades-sostenibles`
+  );
+  return (r as any).data ?? (r as any);
+};
+
+export const getUsuariosActivosPorRol = async () => {
+  const r = await api.get<{ ok: boolean; data: UsuariosActivosRolItem[] }>(
+    `/api/reportesgeneral/usuarios-activos-rol`
+  );
+  return (r as any).data ?? (r as any);
+};

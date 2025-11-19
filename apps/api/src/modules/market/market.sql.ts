@@ -24,6 +24,7 @@ export const MarketSQL = {
       WHERE pub.deleted_at IS NULL
         AND pub.es_visible = TRUE
         AND (pub.fecha_expiracion IS NULL OR pub.fecha_expiracion > NOW())
+        AND e.nombre = 'disponible'   
         AND ($1::text IS NULL OR pub.titulo ILIKE '%'||$1||'%' OR pub.descripcion ILIKE '%'||$1||'%')
         AND ($2::int  IS NULL OR pub.categoria_id = $2)
         AND ($3::int  IS NULL OR pub.valor_creditos >= $3)

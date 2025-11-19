@@ -226,6 +226,23 @@ export async function confirmarIntercambio({
       [intercambioId, confirmComprador, confirmVendedor]
     );
 
+    // Después de UPDATE intercambios ... completado
+await client.query(
+  `
+  UPDATE publicaciones
+  SET estado_id = (
+        SELECT id FROM estado_publicacion
+        WHERE nombre = 'intercambiado'
+        LIMIT 1
+      ),
+      es_visible = FALSE,
+      updated_at = now()
+  WHERE id = $1
+  `,
+  [row.publicacion_id]
+);
+
+
     // Bitácora de confirmación
     await client.query(IntercambiosSQL.insertarBitacora, [
       actorId === compradorId ? "CONFIRMACION_COMPRADOR" : "CONFIRMACION_VENDEDOR",
