@@ -50,10 +50,10 @@ export default function Landing() {
         {/* KPIs / beneficios */}
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { t: "Publicaciones activas", v: "12" },
-            { t: "Usuarios verificados", v: "10" },
-            { t: "Créditos otorgados", v: "5000" },
-            { t: "CO₂ evitado", v: "120" },
+            { t: "Publicaciones activas", v: "-" },
+            { t: "Usuarios verificados", v: "-" },
+            { t: "Créditos otorgados", v: "-" },
+            { t: "CO₂ evitado", v: "-" },
           ].map((k) => (
             <Card
               key={k.t}

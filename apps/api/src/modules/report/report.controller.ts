@@ -1,7 +1,16 @@
 import { Request, Response } from "express";
 import * as S from "./report.service";
 
-const uidFrom = (req: Request) => Number(req.header("x-user-id") || req.query.usuario_id || 0) || null;
+
+const uidFrom = (req: Request) => {
+  const fromHeader = req.header("x-user-id");
+  const fromQuery  = req.query.usuario_id as string | undefined;
+  const fromBody   = (req.body as any)?.usuario_id;
+
+  const raw = fromHeader ?? fromQuery ?? fromBody ?? null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
 
 export const userSummary = async (req: Request, res: Response) => {
   try {
