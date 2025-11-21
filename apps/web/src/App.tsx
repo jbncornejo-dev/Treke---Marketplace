@@ -8,11 +8,9 @@ import MarketDetailPage from "./pages/Marketplace/MarketDetail";
 import MarketCreate from "./pages/Marketplace/MarketCreate";
 import ComprarPaquetes from "./pages/Creditos/ComprarPaquetes";
 import IntercambiosPage from "./pages/profile/IntercambiosPage";
-
-import AdminReportsPage from "./pages/Reportes/AdminReportsPage";
-import UserReportsPage from "./pages/Reportes/UserReportsPage";
-import OrgReportsPage from "./pages/Reportes/OrgReportsPage";
-
+import UserReportsPage from "./pages/reports/UserReportsPage";
+import OrgReportsPage from "./pages/reports/OrgReportsPage";
+import AdminReportsPage from "./pages/reports/AdminReportsPage";
 
 
 
@@ -67,15 +65,10 @@ export default function App() {
           <Route path="/market/nueva" element={<MarketCreate />} />
           <Route path="/creditos/paquetes" element={<ComprarPaquetes />} />
            <Route path="/perfil/intercambios" element={<IntercambiosPage />} />
-
-          {/* Dashboard admin con todos los indicadores */}
+          <Route path="/perfil/reportes" element={<UserReportsPage />} />
+          <Route path="/org/reportes" element={<OrgReportsPage />} />
           <Route path="/admin/reportes" element={<AdminReportsPage />} />
 
-          {/* Dashboard de usuario (sus métricas e historial) */}
-          <Route path="/perfil/reportes" element={<UserReportsPage />} />
-
-          {/* Dashboard de emprendedor / ONG */}
-          <Route path="/org/reportes" element={<OrgReportsPage />} />
 
         </Routes>
       </div>

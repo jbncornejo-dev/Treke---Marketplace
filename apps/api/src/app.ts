@@ -1,30 +1,29 @@
+// apps/api/src/app.ts
 import express from "express";
 import cors from "cors";
 import path from "path";
-import usuariosRoutes from './modules/usuarios/usuarios.routes';
+import usuariosRoutes from "./modules/usuarios/usuarios.routes";
 import marketRoutes from "./modules/market/market.routes";
 import reportRoutes from "./modules/report/report.routes";
-import reportesGeneral from "./routes/reportes.general";
-import reportesMonetizacion from "./routes/reportes.monetizacion";
 import creditosRoutes from "./modules/creditos/creditos.routes";
 import intercambiosRoutes from "./modules/intercambios/intercambios.routes";
 
 const app = express();
 
 app.use(cors({ origin: ["http://localhost:5173"], credentials: true }));
-
 app.use(express.json());
-app.use('/api', usuariosRoutes);
-app.use("/api", marketRoutes);
-app.use("/api", reportRoutes);
 
-app.use("/api/reportesgeneral", reportesGeneral);
-app.use("/api/admin/reportes/monetizacion", reportesMonetizacion);
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+// 🔹 Rutas de API
+app.use("/api", usuariosRoutes);
+app.use("/api", marketRoutes);
 app.use("/api", creditosRoutes);
 app.use("/api", intercambiosRoutes);
+app.use("/api", reportRoutes); // 👈 aquí quedan TODOS tus reportes
 
-// 🔹 Sirve un HTML simple en la raíz
+// 🔹 Archivos estáticos (fotos de publicaciones, etc.)
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
+// 🔹 Página raíz informativa (puedes dejar la tuya)
 app.get("/", (_req, res) => {
   res.send(`
     <html>
@@ -33,7 +32,7 @@ app.get("/", (_req, res) => {
         <style>
           body { font-family: sans-serif; text-align: center; background: #f3f4f6; margin-top: 100px; }
           h1 { color: #22c55e; }
-          .box { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 2px 10px rgba(0,0,0,0.1);}
+          .box { background: white; padding: 20px; border-radius: 8px; display: inline-block; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
           a { color: #2563eb; text-decoration: none; }
         </style>
       </head>
@@ -49,9 +48,14 @@ app.get("/", (_req, res) => {
   `);
 });
 
-// Endpoint de prueba JSON
+// 🔹 Endpoint de prueba JSON
 app.get("/api/prueba", (_req, res) => {
   res.json({ ok: true, service: "TREKE API", time: new Date().toISOString() });
+});
+
+// (Si quieres) health sencillo
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true, status: "healthy" });
 });
 
 export default app;
