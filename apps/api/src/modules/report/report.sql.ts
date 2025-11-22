@@ -80,6 +80,15 @@ export const ReportSQL = {
     ORDER BY ratio_intercambio_porcentaje ASC, total_publicaciones DESC;
   `,
 
+categoriasIntercambioPopular: `
+    SELECT
+      categoria_id,
+      categoria,
+      intercambios_completados AS intercambios
+    FROM vw_categorias_intercambio_popular
+    ORDER BY intercambios DESC;
+  `,
+
   // =====================================================
   // 4) MONETIZACIÓN / CRÉDITOS
   // =====================================================
@@ -156,6 +165,13 @@ export const ReportSQL = {
     FROM vw_consumo_vs_generacion
     ORDER BY origen;
   `,
+
+   ingresosPorVentaDeCreditos: `
+  SELECT creditos_total, bs_total, compras_completadas
+  FROM vw_ingresos_por_venta_de_creditos;
+`,
+
+
 
   // =====================================================
   // 5) IMPACTO AMBIENTAL / SOSTENIBILIDAD
@@ -282,4 +298,20 @@ export const ReportSQL = {
       ratio_activas
     FROM vw_adopcion_suscripcion;
   `,
+
+   // ============================================
+  // 8) USUARIOS ACTIVOS POR ROL
+  // ============================================
+
+  usuariosActivosPorRol: `
+    SELECT
+      usuario_id,
+      email,
+      rol,
+      ultima_actividad
+    FROM vw_usuarios_activos_por_rol
+    ORDER BY ultima_actividad DESC;
+  `,
 };
+
+

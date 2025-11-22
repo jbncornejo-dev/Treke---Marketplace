@@ -77,6 +77,14 @@ export async function getRatioDemandaPorCategoria() {
   });
 }
 
+
+/** NUEVO: Categorías de intercambio popular (vw_categorias_intercambio_popular) */
+export async function getCategoriasIntercambioPopular() {
+  return withTx(async (c) => {
+    const res = await c.query(ReportSQL.categoriasIntercambioPopular);
+    return res.rows;
+  });
+}
 /**
  * ============================================
  * 4) MONETIZACIÓN / CRÉDITOS
@@ -138,6 +146,15 @@ export async function getConsumoVsGeneracion() {
     return res.rows;
   });
 }
+
+/** NUEVO: Ingresos por venta de créditos (vw_ingresos_por_venta_de_creditos) */
+export async function getIngresosPorVentaDeCreditos() {
+  return withTx(async (c) => {
+    const res = await c.query(ReportSQL.ingresosPorVentaDeCreditos);
+    return res.rows[0] || null;
+  });
+}
+
 
 /**
  * ============================================
@@ -214,7 +231,13 @@ export async function getAdopcionSuscripcion() {
     return res.rows[0] || null;
   });
 }
-
+/** NUEVO: Usuarios activos por rol (vw_usuarios_activos_por_rol) */
+export async function getUsuariosActivosPorRol() {
+  return withTx(async (c) => {
+    const res = await c.query(ReportSQL.usuariosActivosPorRol);
+    return res.rows;
+  });
+}
 /**
  * ============================================
  * 7) DASHBOARDS COMPACTOS (útiles para front)
@@ -258,14 +281,14 @@ export async function getUserSummary(usuarioId: number) {
 export async function getAdminDashboard() {
   return withTx(async (c) => {
     const [
-      ingresosTotal,
+      ingresosVentaCreditos,
       ingresosMes,
       impacto,
       adopcion,
       totalIntercambios,
       consumo,
     ] = await Promise.all([
-      c.query(ReportSQL.monetizacionIngresosTotal),
+      c.query(ReportSQL.ingresosPorVentaDeCreditos),  // 👈 NUEVA VISTA
       c.query(ReportSQL.monetizacionIngresosPorMes),
       c.query(ReportSQL.impactoAmbientalTotal),
       c.query(ReportSQL.adopcionSuscripcion),
@@ -274,7 +297,7 @@ export async function getAdminDashboard() {
     ]);
 
     return {
-      ingresos_total: ingresosTotal.rows[0] || null,
+      ingresos_total: ingresosVentaCreditos.rows[0] || null, // 👈 ahora viene de la nueva vista
       ingresos_por_mes: ingresosMes.rows,
       impacto_total: impacto.rows[0] || null,
       adopcion_suscripcion: adopcion.rows[0] || null,
@@ -283,3 +306,5 @@ export async function getAdminDashboard() {
     };
   });
 }
+
+

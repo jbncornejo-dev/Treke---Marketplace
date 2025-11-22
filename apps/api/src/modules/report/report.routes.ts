@@ -17,5 +17,5 @@ r.get("/report/org/me/top-categorias", C.orgTopCategorias);
 r.get("/report/admin/overview", C.adminOverview);
 r.get("/report/admin/top-categorias", C.adminTopCategorias);
 r.get("/report/admin/top-usuarios", C.adminTopUsuarios);
-
+r.get("/report/admin/usuarios-activos-por-rol", C.adminUsuariosActivosPorRol);
 export default r;

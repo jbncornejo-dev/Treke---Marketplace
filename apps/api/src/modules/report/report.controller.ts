@@ -114,15 +114,16 @@ export const orgWallet = async (req: Request, res: Response) => {
  * TOP CATEGORÍAS PARA ORG
  * Reutilizamos vw_intercambios_por_categorias.
  */
+// Emprendedor/ONG – TOP CATEGORÍAS
+// Antes: S.getIntercambiosPorCategorias()
 export const orgTopCategorias = async (_: Request, res: Response) => {
   try {
-    const data = await S.getIntercambiosPorCategorias();
+    const data = await S.getCategoriasIntercambioPopular(); // 👈 nueva vista
     res.json({ ok: true, data });
   } catch (e: any) {
     res.status(400).json({ ok: false, error: e.message });
   }
 };
-
 /**
  * ADMIN OVERVIEW
  * Usa S.getAdminDashboard() del nuevo service:
@@ -142,13 +143,15 @@ export const adminOverview = async (_: Request, res: Response) => {
   }
 };
 
+
+
 /**
  * ADMIN TOP CATEGORÍAS
- * También basado en vw_intercambios_por_categorias.
+ * Ahora basado en vw_categorias_intercambio_popular.
  */
 export const adminTopCategorias = async (_: Request, res: Response) => {
   try {
-    const data = await S.getIntercambiosPorCategorias();
+    const data = await S.getCategoriasIntercambioPopular(); // 👈 nueva vista
     res.json({ ok: true, data });
   } catch (e: any) {
     res.status(400).json({ ok: false, error: e.message });
@@ -162,6 +165,19 @@ export const adminTopCategorias = async (_: Request, res: Response) => {
 export const adminTopUsuarios = async (_: Request, res: Response) => {
   try {
     const data = await S.getRankingTop10();
+    res.json({ ok: true, data });
+  } catch (e: any) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+};
+
+/**
+ * ADMIN – Usuarios activos por rol
+ * Usa S.getUsuariosActivosPorRol() → vw_usuarios_activos_por_rol
+ */
+export const adminUsuariosActivosPorRol = async (_: Request, res: Response) => {
+  try {
+    const data = await S.getUsuariosActivosPorRol();
     res.json({ ok: true, data });
   } catch (e: any) {
     res.status(400).json({ ok: false, error: e.message });

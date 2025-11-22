@@ -76,12 +76,10 @@ export async function comprarPaquete(usuarioId: number, paqueteId: number) {
     // 4) crear registro de compra
     const idTransaccion = `PKT-${Date.now()}-${usuarioId}`;
     const c = await client.query(CreditosSQL.crearCompraCreditos, [
-      idTransaccion,
-      "completado", // por ahora marcamos como pagado directo
-      precioNum,
-      creditos,
       usuarioId,
-      paquete.id,
+    paquete.id,
+    idTransaccion,
+    'completado',
     ]);
     const compraId = c.rows[0].id;
 

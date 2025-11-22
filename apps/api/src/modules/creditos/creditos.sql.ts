@@ -40,17 +40,15 @@ export const CreditosSQL = {
   `,
 
   crearCompraCreditos: `
-    INSERT INTO compras_creditos (
-      id_transaccion,
-      estado_pago,
-      monto_total,
-      creditos_obtenidos,
+  INSERT INTO compras_creditos(
       usuario_id,
-      paquete_id
-    )
-    VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING id;
-  `,
+      paquete_id,
+      id_transaccion,
+      estado_pago
+  )
+  VALUES ($1, $2, $3, $4)
+  RETURNING id
+`,
 
   crearMovimiento: `
     INSERT INTO movimientos (
