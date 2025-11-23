@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import * as svc from './usuarios.service';
 
+const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+
 export const UsuariosController = {
   register: async (req: Request, res: Response) => {
     try {
@@ -15,10 +18,15 @@ export const UsuariosController = {
   login: async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ ok: false, error: 'email y password son obligatorios' });
+      }
+
       const data = await svc.loginPlano(email, password);
-      res.json(data);
+      // data = { ok, user, token }
+      return res.json(data);
     } catch (e: any) {
-      res.status(400).json({ ok: false, error: e.message });
+      return res.status(401).json({ ok: false, error: e.message });
     }
   },
 

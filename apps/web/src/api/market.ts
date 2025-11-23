@@ -1,7 +1,7 @@
+// apps/web/src/api/market.ts
 import { api } from "./client";
 
 export type SortKey = "recent" | "price_asc" | "price_desc" | "near";
-
 
 export type FactorEcologico = {
   id: number;
@@ -9,8 +9,11 @@ export type FactorEcologico = {
   unidad_medida: string;
   desc_calc: string;
 };
+
 export async function getFactoresEcologicos(): Promise<FactorEcologico[]> {
-  const r = await api.get<{ ok: boolean; data: FactorEcologico[] }>('/api/catalogo/factores-ecologicos');
+  const r = await api.get<{ ok: boolean; data: FactorEcologico[] }>(
+    "/api/catalogo/factores-ecologicos"
+  );
   return (r as any).data ?? (r as any);
 }
 
@@ -54,7 +57,8 @@ export async function list(opts: {
 }): Promise<MarketListResp> {
   const p = new URLSearchParams();
   if (opts.q) p.set("q", opts.q);
-  if (opts.categoria_id != null) p.set("categoria_id", String(opts.categoria_id));
+  if (opts.categoria_id != null)
+    p.set("categoria_id", String(opts.categoria_id));
   if (opts.min_cred != null) p.set("min_cred", String(opts.min_cred));
   if (opts.max_cred != null) p.set("max_cred", String(opts.max_cred));
   if (opts.estado_id != null) p.set("estado_id", String(opts.estado_id));
@@ -65,7 +69,9 @@ export async function list(opts: {
   p.set("limit", String(opts.limit ?? 12));
   p.set("offset", String(opts.offset ?? 0));
 
-  const resp = await api.get<{ ok: boolean; data: MarketListResp }>(`/api/market/list?${p.toString()}`);
+  const resp = await api.get<{ ok: boolean; data: MarketListResp }>(
+    `/api/market/list?${p.toString()}`
+  );
   return (resp as any).data ?? (resp as any);
 }
 
@@ -82,21 +88,26 @@ export function getCurrentUserId(): number | null {
     if (!raw) return null;
     const u = JSON.parse(raw);
     return Number(u?.id) || null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function detail(id: number): Promise<MarketDetail> {
-  const uid = getCurrentUserId();
-  const headers = uid ? { "x-user-id": String(uid) } : undefined;
-  const resp = await api.get<{ ok: boolean; data: MarketDetail }>(`/api/market/${id}`, { headers } as any);
+  const resp = await api.get<{ ok: boolean; data: MarketDetail }>(
+    `/api/market/${id}`
+  );
   return (resp as any).data ?? (resp as any);
 }
 
 export async function toggleFav(id: number, wantFav: boolean) {
   const uid = getCurrentUserId();
-  const headers = uid ? { "x-user-id": String(uid) } : undefined;
-  if (wantFav) return api.post(`/api/market/${id}/fav`, {}, { headers } as any);
-  return api.del(`/api/market/${id}/fav`, { headers } as any);
+  if (!uid) throw new Error("Debes iniciar sesión");
+
+  if (wantFav) {
+    return api.post(`/api/market/${id}/fav`, {});
+  }
+  return api.del(`/api/market/${id}/fav`);
 }
 
 export type CrearPublicacionPayload = {
@@ -109,54 +120,51 @@ export type CrearPublicacionPayload = {
   peso_aprox_kg?: number | null;
   categoria_id: number;
   estado_id?: number | null;
-  factor_ids: number[];   // ids de factores_ecologicos seleccionados
-  sin_impacto: boolean;   // true si marcó "ninguna"
-  fotos: string[];        // por ahora URLs
+  factor_ids: number[]; // ids de factores_ecologicos seleccionados
+  sin_impacto: boolean; // true si marcó "ninguna"
+  fotos: string[]; // por ahora URLs
 };
 
 export async function crearPublicacion(payload: CrearPublicacionPayload) {
   const uid = getCurrentUserId();
-  const headers = uid ? { "x-user-id": String(uid) } : undefined;
+  if (!uid) throw new Error("Debes iniciar sesión");
 
   const resp = await api.post<{ ok: boolean; data: { id: number } }>(
     "/api/market",
-    payload,
-    { headers } as any
+    payload
   );
 
   return (resp as any).data ?? (resp as any);
 }
 
-
 // catálogos dinámicos
-export async function getCategorias(): Promise<Array<{id:number; nombre:string}>> {
-  const r = await api.get<{ ok:boolean; data: Array<{id:number; nombre:string}> }>('/api/catalogo/categorias');
+export async function getCategorias(): Promise<Array<{ id: number; nombre: string }>> {
+  const r = await api.get<{
+    ok: boolean;
+    data: Array<{ id: number; nombre: string }>;
+  }>("/api/catalogo/categorias");
   return (r as any).data ?? (r as any);
 }
-export async function getEstadosPublicacion(): Promise<Array<{id:number; nombre:string}>> {
-  const r = await api.get<{ ok:boolean; data: Array<{id:number; nombre:string}> }>('/api/catalogo/estados-publicacion');
+
+export async function getEstadosPublicacion(): Promise<
+  Array<{ id: number; nombre: string }>
+> {
+  const r = await api.get<{
+    ok: boolean;
+    data: Array<{ id: number; nombre: string }>;
+  }>("/api/catalogo/estados-publicacion");
   return (r as any).data ?? (r as any);
 }
+
+// Upload con axios (ya NO usamos fetch)
 export async function uploadMarketImages(files: File[]): Promise<string[]> {
   const form = new FormData();
-  files.forEach((file) => form.append("images", file)); // 👈 mismo nombre que en multer
+  files.forEach((file) => form.append("images", file)); // mismo nombre que en multer
 
-  const token = localStorage.getItem("treke_token");
+  const r = await api.post<{ ok: boolean; data: string[] }>(
+    "/api/market/upload-images",
+    form
+  );
 
-  const res = await fetch("/api/market/upload-images", {
-    method: "POST",
-    body: form,
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      // NO pongas Content-Type, el navegador lo setea solo con boundary
-    },
-  });
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data?.error || "Error al subir imágenes");
-  }
-
-  // data.data = array de URLs
-  return data.data ?? [];
+  return (r as any).data ?? (r as any);
 }

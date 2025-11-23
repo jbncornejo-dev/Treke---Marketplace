@@ -1,27 +1,18 @@
 // apps/api/src/modules/intercambios/intercambios.routes.ts
 import { Router } from "express";
 import { IntercambiosController as C } from "./intercambios.controller";
+import { authMiddleware, selfOrAdmin } from "../../middlewares/auth";
 
 const r = Router();
 
-// RF-18
-r.post("/intercambios/propuestas", C.iniciarPropuesta);
+r.post("/intercambios/propuestas", authMiddleware, C.iniciarPropuesta);
+r.post("/intercambios/propuestas/:id/aceptar", authMiddleware, C.aceptarPropuesta);
+r.post("/intercambios/propuestas/:id/rechazar", authMiddleware, C.rechazarPropuesta);
+r.post("/intercambios/propuestas/:id/contraoferta", authMiddleware, C.contraoferta);
 
-// RF-19, RF-20
-r.post("/intercambios/propuestas/:id/aceptar", C.aceptarPropuesta);
+r.post("/intercambios/:id/confirmar", authMiddleware, C.confirmar);
+r.post("/intercambios/:id/cancelar", authMiddleware, C.cancelar);
 
-// RF-21, RF-22
-r.post("/intercambios/:id/confirmar", C.confirmar);
-
-// RF-23
-r.post("/intercambios/:id/cancelar", C.cancelar);
-
-// RF-24 – resumen para la página propia de intercambios
-r.get("/usuarios/:id/intercambios", C.resumenUsuario);
-
-r.post("/intercambios/propuestas/:id/aceptar",   C.aceptarPropuesta);
-r.post("/intercambios/propuestas/:id/rechazar",  C.rechazarPropuesta);   // 👈 nuevo
-r.post("/intercambios/propuestas/:id/contraoferta", C.contraoferta);     // 👈 nuevo
-
+r.get("/usuarios/:id/intercambios", authMiddleware, selfOrAdmin, C.resumenUsuario);
 
 export default r;

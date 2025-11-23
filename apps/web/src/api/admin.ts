@@ -1,4 +1,5 @@
-import { api } from './client';
+// apps/web/src/api/admin.ts
+import { api } from "./client";
 
 export type Usuario = {
   id: number;
@@ -10,16 +11,21 @@ export type Usuario = {
 };
 
 export async function listarUsuarios(): Promise<Usuario[]> {
-  const resp = await api.get<{ ok:boolean; data: Usuario[] } | Usuario[]>('/api/admin/usuarios');
+  const resp = await api.get<{ ok: boolean; data: Usuario[] } | Usuario[]>(
+    "/api/admin/usuarios"
+  );
   // tu controlador puede devolver {ok, data} o arreglo directo — normalízalo:
   return Array.isArray(resp) ? resp : (resp as any).data || [];
 }
 
 export async function crearUsuario(payload: {
-  email: string; full_name: string; password: string;
-  acepta_terminos: boolean; rol_id?: number;
+  email: string;
+  full_name: string;
+  password: string;
+  acepta_terminos: boolean;
+  rol_id?: number;
 }) {
-  return api.post('/api/usuarios/register', payload);
+  return api.post("/api/usuarios/register", payload);
 }
 
 export async function cambiarRol(id: number, nuevoRolId: number) {
@@ -43,7 +49,7 @@ export async function updateEmail(id: number, email: string) {
 }
 
 export const ROL_LABEL: Record<number, string> = {
-  10001: 'Usuario',
-  10002: 'Emprendedor',
-  10003: 'Administrador',
+  10001: "Usuario",
+  10002: "Emprendedor",
+  10003: "Administrador",
 };

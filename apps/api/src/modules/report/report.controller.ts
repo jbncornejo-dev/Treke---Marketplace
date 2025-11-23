@@ -1,19 +1,16 @@
+// apps/api/src/modules/report/report.controller.ts
 import { Request, Response } from "express";
 import * as S from "./report.service";
 
+// Ahora el uid viene SIEMPRE del JWT (req.user), no de headers/body/query
 const uidFrom = (req: Request) => {
-  const fromHeader = req.header("x-user-id");
-  const fromQuery  = req.query.usuario_id as string | undefined;
-  const fromBody   = (req.body as any)?.usuario_id;
-
-  const raw = fromHeader ?? fromQuery ?? fromBody ?? null;
-  const n = Number(raw);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  const id = req.user?.id;
+  return typeof id === "number" && id > 0 ? id : null;
 };
 
 /**
  * RESUMEN DEL USUARIO (DASHBOARD)
- * Usa S.getUserSummary(usuarioId) del nuevo service:
+ * Usa S.getUserSummary(usuarioId):
  *  - actividad
  *  - ranking
  *  - saldo
@@ -22,7 +19,12 @@ const uidFrom = (req: Request) => {
 export const userSummary = async (req: Request, res: Response) => {
   try {
     const uid = uidFrom(req);
-    if (!uid) throw new Error("x-user-id requerido");
+    if (!uid) {
+      return res.status(401).json({
+        ok: false,
+        error: "No autorizado (usuario no encontrado en token)",
+      });
+    }
 
     const data = await S.getUserSummary(uid);
     res.json({ ok: true, data });
@@ -41,7 +43,12 @@ export const userSummary = async (req: Request, res: Response) => {
 export const userRanking = async (req: Request, res: Response) => {
   try {
     const uid = uidFrom(req);
-    if (!uid) throw new Error("x-user-id requerido");
+    if (!uid) {
+      return res.status(401).json({
+        ok: false,
+        error: "No autorizado (usuario no encontrado en token)",
+      });
+    }
 
     const [me, top10] = await Promise.all([
       S.getRankingMeWithPosition(uid),
@@ -56,17 +63,17 @@ export const userRanking = async (req: Request, res: Response) => {
 
 /**
  * HISTORIAL DEL USUARIO
- * ⚠️ Con las vistas actuales todavía NO tenemos una vista de historial
- * por intercambio (tipo v_user_trade_history).
- *
- * Para no mentirte, dejo este endpoint como NO IMPLEMENTADO con las nuevas vistas.
- * Cuando definamos una vista (o un SELECT específico) para historial, aquí
- * solo habrá que cambiar el cuerpo.
+ * ⚠️ Aún NO implementado con las nuevas vistas.
  */
 export const userHistory = async (req: Request, res: Response) => {
   try {
     const uid = uidFrom(req);
-    if (!uid) throw new Error("x-user-id requerido");
+    if (!uid) {
+      return res.status(401).json({
+        ok: false,
+        error: "No autorizado (usuario no encontrado en token)",
+      });
+    }
 
     return res.status(501).json({
       ok: false,
@@ -81,9 +88,7 @@ export const userHistory = async (req: Request, res: Response) => {
 
 /**
  * ORG / EMPRENDEDOR – VENTAS
- * De momento usamos la info global de ingresos por mes.
- * Si luego quieres ventas POR vendedor, creamos una vista específica
- * (ej. vw_ventas_por_vendedor) y cambiamos este handler.
+ * De momento usa info global de ingresos por mes.
  */
 export const orgVentas = async (_req: Request, res: Response) => {
   try {
@@ -96,12 +101,17 @@ export const orgVentas = async (_req: Request, res: Response) => {
 
 /**
  * ORG / EMPRENDEDOR – WALLET
- * Usa saldo por usuario desde la vista vw_saldo_creditos_usuario.
+ * Usa saldo por usuario desde vw_saldo_creditos_usuario.
  */
 export const orgWallet = async (req: Request, res: Response) => {
   try {
     const uid = uidFrom(req);
-    if (!uid) throw new Error("x-user-id requerido");
+    if (!uid) {
+      return res.status(401).json({
+        ok: false,
+        error: "No autorizado (usuario no encontrado en token)",
+      });
+    }
 
     const data = await S.getSaldoCreditosUsuario(uid);
     res.json({ ok: true, data });
@@ -112,21 +122,20 @@ export const orgWallet = async (req: Request, res: Response) => {
 
 /**
  * TOP CATEGORÍAS PARA ORG
- * Reutilizamos vw_intercambios_por_categorias.
+ * Reutiliza vw_categorias_intercambio_popular.
  */
-// Emprendedor/ONG – TOP CATEGORÍAS
-// Antes: S.getIntercambiosPorCategorias()
 export const orgTopCategorias = async (_: Request, res: Response) => {
   try {
-    const data = await S.getCategoriasIntercambioPopular(); // 👈 nueva vista
+    const data = await S.getCategoriasIntercambioPopular();
     res.json({ ok: true, data });
   } catch (e: any) {
     res.status(400).json({ ok: false, error: e.message });
   }
 };
+
 /**
  * ADMIN OVERVIEW
- * Usa S.getAdminDashboard() del nuevo service:
+ * Usa S.getAdminDashboard():
  *  - ingresos_total
  *  - ingresos_por_mes
  *  - impacto_total
@@ -143,15 +152,13 @@ export const adminOverview = async (_: Request, res: Response) => {
   }
 };
 
-
-
 /**
  * ADMIN TOP CATEGORÍAS
- * Ahora basado en vw_categorias_intercambio_popular.
+ * Usa vw_categorias_intercambio_popular.
  */
 export const adminTopCategorias = async (_: Request, res: Response) => {
   try {
-    const data = await S.getCategoriasIntercambioPopular(); // 👈 nueva vista
+    const data = await S.getCategoriasIntercambioPopular();
     res.json({ ok: true, data });
   } catch (e: any) {
     res.status(400).json({ ok: false, error: e.message });
@@ -160,7 +167,7 @@ export const adminTopCategorias = async (_: Request, res: Response) => {
 
 /**
  * ADMIN TOP USUARIOS
- * Usa S.getRankingTop10() (vista vw_ranking_participacion).
+ * Usa vw_ranking_participacion → getRankingTop10().
  */
 export const adminTopUsuarios = async (_: Request, res: Response) => {
   try {
@@ -173,7 +180,7 @@ export const adminTopUsuarios = async (_: Request, res: Response) => {
 
 /**
  * ADMIN – Usuarios activos por rol
- * Usa S.getUsuariosActivosPorRol() → vw_usuarios_activos_por_rol
+ * Usa vw_usuarios_activos_por_rol.
  */
 export const adminUsuariosActivosPorRol = async (_: Request, res: Response) => {
   try {
@@ -183,9 +190,10 @@ export const adminUsuariosActivosPorRol = async (_: Request, res: Response) => {
     res.status(400).json({ ok: false, error: e.message });
   }
 };
+
 /**
  * ADMIN – Última actividad de todos los usuarios
- * Usa S.getUserLastActivityAll() → vw_user_last_activity
+ * Usa vw_user_last_activity.
  */
 export const adminUserLastActivityAll = async (_: Request, res: Response) => {
   try {
@@ -198,7 +206,7 @@ export const adminUserLastActivityAll = async (_: Request, res: Response) => {
 
 /**
  * ADMIN – Usuarios inactivos > 30 días
- * Usa S.getUsuariosInactivos30d() → vw_usuario_inactivos_30d
+ * Usa vw_usuario_inactivos_30d.
  */
 export const adminUsuariosInactivos30d = async (_: Request, res: Response) => {
   try {

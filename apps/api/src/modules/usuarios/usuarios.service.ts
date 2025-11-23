@@ -1,7 +1,8 @@
 import { pool } from '../../config/database/database';
 import { PoolClient } from 'pg';
 import { SQL } from './usuarios.sql';
-
+import bcrypt from 'bcryptjs';
+import { signToken, JwtUser } from '../../middlewares/auth';
 
 
 // Helper local de transacciones usando TU pool
@@ -28,14 +29,16 @@ export async function registrarUsuario(input: {
   if (!input.full_name?.trim()) throw new Error('Nombre completo es requerido');
   if (!input.password || input.password.length < 6) throw new Error('Contraseña mínima de 6 caracteres');
 
+  // 🔐 Hash de contraseña
+  const hashedPassword = await bcrypt.hash(input.password, 10);
+
   return withTx(async (client: PoolClient) => {
     const dup = await client.query(SQL.existeEmail, [input.email]);
     if (dup.rowCount) throw new Error('El email ya existe');
 
-    // Tu seed: 10001 = 'usuario'
-    const rolId = input.rol_id ?? 10001;
+    const rolId = input.rol_id ?? 10001; // usuario por defecto
 
-    const u = await client.query(SQL.crearUsuario, [input.email, input.password, rolId]);
+    const u = await client.query(SQL.crearUsuario, [input.email, hashedPassword, rolId]);
     const user = u.rows[0];
 
     const p = await client.query(SQL.crearPerfil, [input.full_name, user.id]);
@@ -48,11 +51,62 @@ export async function registrarUsuario(input: {
   });
 }
 
+
 export async function loginPlano(email: string, password: string) {
-  const r = await pool.query(SQL.loginPlano, [email, password]);
-  if (!r.rowCount) throw new Error('Credenciales inválidas');
-  return { ok: true, user: r.rows[0], token: 'DEV_TOKEN' }; // dummy
+  const r = await pool.query(SQL.loginPlano, [email]);
+  if (!r.rowCount) throw new Error("Credenciales inválidas");
+
+  const row = r.rows[0] as any;
+
+  // Verificar estado del usuario
+  if (row.estado === "suspendido") {
+    throw new Error("Usuario suspendido");
+  }
+
+  const dbPassword: string = row.password;
+  let ok = false;
+
+  // Detectar si la contraseña en BD ya es bcrypt o todavía es texto plano
+  const isBcrypt =
+    typeof dbPassword === "string" &&
+    (dbPassword.startsWith("$2a$") ||
+      dbPassword.startsWith("$2b$") ||
+      dbPassword.startsWith("$2y$"));
+
+  if (isBcrypt) {
+    // ✅ Caso nuevo: ya está hasheada
+    ok = await bcrypt.compare(password, dbPassword);
+  } else {
+    // 🧓 Caso legacy: estaba en texto plano
+    ok = password === dbPassword;
+
+    if (ok) {
+      // Migrar automáticamente a bcrypt
+      const newHash = await bcrypt.hash(password, 10);
+      await pool.query(
+        "UPDATE usuario SET password = $1, updated_at = now() WHERE id = $2",
+        [newHash, row.id]
+      );
+    }
+  }
+
+  if (!ok) {
+    throw new Error("Credenciales inválidas");
+  }
+
+  const user: JwtUser = {
+    id: row.id,
+    email: row.email,
+    rol_id: row.rol_id,
+    estado: row.estado,
+  };
+
+  const token = signToken(user);
+
+  return { ok: true, user, token };
 }
+
+
 
 export async function getPerfil(usuarioId: number) {
   const r = await pool.query(SQL.getPerfilFull, [usuarioId]);

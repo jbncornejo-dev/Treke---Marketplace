@@ -45,7 +45,12 @@ export const SQL = {
   `,
 
   // --- Login mínimo (pruebas) ---
-  loginPlano: `SELECT id, email, rol_id, estado FROM usuario WHERE email=$1 AND password=$2 AND deleted_at IS NULL;`,
+  loginPlano: `
+  SELECT id, email, rol_id, estado, password
+  FROM usuario
+  WHERE email = $1 AND deleted_at IS NULL;
+`,
+
 
   // --- Perfil ---
   getPerfilFull: `

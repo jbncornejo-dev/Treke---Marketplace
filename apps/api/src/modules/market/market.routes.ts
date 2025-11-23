@@ -1,26 +1,29 @@
 import { Router } from "express";
 import { MarketController as C } from "./market.controller";
 import { uploadMarketImages } from "./market.upload";
-
+import { authMiddleware } from "../../middlewares/auth";
 
 const r = Router();
 
+// públicas
 r.get("/market/list", C.list);
 r.get("/market/:id", C.detail);
 
-// NUEVA ruta para crear publicación
-r.post("/market", C.create);
-r.post("/market/upload-images", uploadMarketImages, C.uploadImages);
+// protegidas
+r.post("/market", authMiddleware, C.create);
+r.post(
+  "/market/upload-images",
+  authMiddleware,
+  uploadMarketImages,
+  C.uploadImages
+);
 
+r.post("/market/:id/fav", authMiddleware, C.favAdd);
+r.delete("/market/:id/fav", authMiddleware, C.favRemove);
 
-r.post("/market/:id/fav", C.favAdd);
-r.delete("/market/:id/fav", C.favRemove);
-
-// catálogos
+// catálogos (públicos)
 r.get("/catalogo/categorias", C.categorias);
 r.get("/catalogo/estados-publicacion", C.estados);
-
-// NUEVO catálogo de factores ecológicos
 r.get("/catalogo/factores-ecologicos", C.factores);
 
 export default r;

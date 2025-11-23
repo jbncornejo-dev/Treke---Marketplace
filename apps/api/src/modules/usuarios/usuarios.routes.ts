@@ -1,28 +1,24 @@
 import { Router } from 'express';
 import { UsuariosController as C } from './usuarios.controller';
+import { authMiddleware, adminOnly, selfOrAdmin } from '../../middlewares/auth';
 
 const r = Router();
 
-// Registro + Bono
-r.post('/usuarios/register', C.register);
-
-// Login mínimo
-r.post('/auth/login', C.login);
-
-// Perfil
+// Registro + Login (públicos)
 r.post('/usuarios/register', C.register);
 r.post('/auth/login', C.login);
-r.get('/usuarios/:id/perfil', C.getPerfil);
-r.put('/usuarios/:id/perfil', C.updatePerfil);
-r.patch('/usuarios/:id/email', C.updateEmail);
-r.patch('/usuarios/:id/foto', C.updateFoto);
-// Admin (por ahora abierto)
-r.get('/admin/usuarios', C.listar);
-r.patch('/admin/usuarios/:id/rol', C.cambiarRol);
-r.patch('/admin/usuarios/:id/suspender', C.suspender);
-r.delete('/admin/usuarios/:id', C.eliminar);
 
-//perfil
-r.get('/usuarios/:id/panel', C.panel);
+// Perfil (solo el propio usuario o admin)
+r.get('/usuarios/:id/perfil', authMiddleware, selfOrAdmin, C.getPerfil);
+r.put('/usuarios/:id/perfil', authMiddleware, selfOrAdmin, C.updatePerfil);
+r.patch('/usuarios/:id/email', authMiddleware, selfOrAdmin, C.updateEmail);
+r.patch('/usuarios/:id/foto', authMiddleware, selfOrAdmin, C.updateFoto);
+r.get('/usuarios/:id/panel', authMiddleware, selfOrAdmin, C.panel);
+
+// Admin (solo administradores)
+r.get('/admin/usuarios', authMiddleware, adminOnly, C.listar);
+r.patch('/admin/usuarios/:id/rol', authMiddleware, adminOnly, C.cambiarRol);
+r.patch('/admin/usuarios/:id/suspender', authMiddleware, adminOnly, C.suspender);
+r.delete('/admin/usuarios/:id', authMiddleware, adminOnly, C.eliminar);
 
 export default r;

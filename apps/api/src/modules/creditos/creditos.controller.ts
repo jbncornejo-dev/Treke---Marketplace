@@ -1,11 +1,6 @@
 import { Request, Response } from "express";
 import * as svc from "./creditos.service";
 
-function toInt(raw: any): number | null {
-  const n = Number(raw);
-  return Number.isInteger(n) ? n : null;
-}
-
 export const CreditosController = {
   paquetes: async (_: Request, res: Response) => {
     try {
@@ -16,44 +11,35 @@ export const CreditosController = {
     }
   },
 
-
-      saldo: async (req: Request, res: Response) => {
+  saldo: async (req: Request, res: Response) => {
     try {
-      const userIdHeader = req.header("x-user-id");
-      const userIdQuery = req.query.usuario_id;
-      const userIdBody = (req.body as any)?.usuario_id;
-
-      const usuarioId = toInt(userIdHeader ?? userIdQuery ?? userIdBody);
+      const usuarioId = req.user?.id; // 🔐 viene del JWT (authMiddleware)
 
       if (!usuarioId) {
-        throw new Error(
-          "usuario_id requerido (header x-user-id, query ?usuario_id= o body.usuario_id)"
-        );
+        return res
+          .status(401)
+          .json({ ok: false, error: "No autorizado (sin usuario en token)" });
       }
 
-      const billetera = await svc.obtenerBilletera(usuarioId);
-      res.json({ ok: true, data: billetera });
+      const data = await svc.obtenerBilletera(usuarioId);
+      res.json({ ok: true, data });
     } catch (e: any) {
       console.error("Error saldo billetera:", e);
       res.status(400).json({ ok: false, error: e.message });
     }
   },
 
-
   comprar: async (req: Request, res: Response) => {
     try {
-      const userIdHeader = req.header("x-user-id");
-      const userIdBody = req.body?.usuario_id;
-      const usuarioId = toInt(userIdHeader ?? userIdBody);
-
+      const usuarioId = req.user?.id; // 🔐
       if (!usuarioId) {
-        throw new Error(
-          "usuario_id requerido (header x-user-id o body.usuario_id)"
-        );
+        return res
+          .status(401)
+          .json({ ok: false, error: "No autorizado (sin usuario en token)" });
       }
 
-      const paqueteId = toInt(req.body?.paquete_id);
-      if (!paqueteId) {
+      const paqueteId = Number(req.body?.paquete_id);
+      if (!Number.isInteger(paqueteId) || paqueteId <= 0) {
         throw new Error("paquete_id debe ser un entero válido");
       }
 

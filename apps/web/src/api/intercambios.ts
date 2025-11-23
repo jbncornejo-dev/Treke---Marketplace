@@ -1,6 +1,6 @@
 // apps/web/src/api/intercambios.ts
 import { api } from "./client";
-import { getCurrentUserId } from "./market"; // ya existe ahí
+import { getCurrentUserId } from "./market"; // lo sigues usando para validar login
 
 export type PropuestaResumen = {
   id: number;
@@ -14,7 +14,6 @@ export type PropuestaResumen = {
   contraparte_id: number;
   puede_responder: boolean;
 };
-
 
 export type IntercambioResumen = {
   id: number;
@@ -38,34 +37,30 @@ export type MisIntercambiosResponse = {
   page: { page: number; pageSize: number };
 };
 
-
-
-
 // RF-18
-export async function iniciarPropuesta(publicacionId: number, mensaje?: string, monto_ofertado?: number) {
+export async function iniciarPropuesta(
+  publicacionId: number,
+  mensaje?: string,
+  monto_ofertado?: number
+) {
   const uid = getCurrentUserId();
   if (!uid) throw new Error("Debes iniciar sesión");
-  const headers = { "x-user-id": String(uid) };
 
-  const resp = await api.post(
+  const resp = await api.post<{ ok: boolean; data: any }>(
     "/api/intercambios/propuestas",
-    { publicacion_id: publicacionId, mensaje, monto_ofertado },
-    { headers } as any
+    { publicacion_id: publicacionId, mensaje, monto_ofertado }
   );
   return (resp as any).data ?? resp;
 }
-
 
 // RF-19, RF-20
 export async function aceptarPropuesta(propuestaId: number) {
   const uid = getCurrentUserId();
   if (!uid) throw new Error("Debes iniciar sesión");
-  const headers = { "x-user-id": String(uid) };
 
   const resp = await api.post<{ ok: boolean; data: any }>(
     `/api/intercambios/propuestas/${propuestaId}/aceptar`,
-    {},
-    { headers } as any
+    {}
   );
   return (resp as any).data ?? resp;
 }
@@ -74,26 +69,25 @@ export async function aceptarPropuesta(propuestaId: number) {
 export async function confirmarIntercambio(intercambioId: number) {
   const uid = getCurrentUserId();
   if (!uid) throw new Error("Debes iniciar sesión");
-  const headers = { "x-user-id": String(uid) };
 
   const resp = await api.post<{ ok: boolean; data: any }>(
     `/api/intercambios/${intercambioId}/confirmar`,
-    {},
-    { headers } as any
+    {}
   );
   return (resp as any).data ?? resp;
 }
 
 // RF-23
-export async function cancelarIntercambio(intercambioId: number, motivo?: string) {
+export async function cancelarIntercambio(
+  intercambioId: number,
+  motivo?: string
+) {
   const uid = getCurrentUserId();
   if (!uid) throw new Error("Debes iniciar sesión");
-  const headers = { "x-user-id": String(uid) };
 
   const resp = await api.post<{ ok: boolean; data: any }>(
     `/api/intercambios/${intercambioId}/cancelar`,
-    { motivo },
-    { headers } as any
+    { motivo }
   );
   return (resp as any).data ?? resp;
 }
@@ -107,20 +101,24 @@ export async function fetchMisIntercambios(
   if (opts?.page) q.set("page", String(opts.page));
   if (opts?.pageSize) q.set("pageSize", String(opts.pageSize));
 
-  const path = `/api/usuarios/${usuarioId}/intercambios` + (q.toString() ? `?${q}` : "");
-  const resp = await api.get<{ ok: boolean; data: MisIntercambiosResponse }>(path);
+  const path =
+    `/api/usuarios/${usuarioId}/intercambios` + (q.toString() ? `?${q}` : "");
+  const resp = await api.get<{ ok: boolean; data: MisIntercambiosResponse }>(
+    path
+  );
   return (resp as any).data ?? (resp as any);
 }
 
-export async function rechazarPropuesta(propuestaId: number, motivo?: string) {
+export async function rechazarPropuesta(
+  propuestaId: number,
+  motivo?: string
+) {
   const uid = getCurrentUserId();
   if (!uid) throw new Error("Debes iniciar sesión");
-  const headers = { "x-user-id": String(uid) };
 
-  const resp = await api.post(
+  const resp = await api.post<{ ok: boolean; data: any }>(
     `/api/intercambios/propuestas/${propuestaId}/rechazar`,
-    { motivo },
-    { headers } as any
+    { motivo }
   );
   return (resp as any).data ?? resp;
 }
@@ -132,12 +130,10 @@ export async function contraofertarPropuesta(
 ) {
   const uid = getCurrentUserId();
   if (!uid) throw new Error("Debes iniciar sesión");
-  const headers = { "x-user-id": String(uid) };
 
-  const resp = await api.post(
+  const resp = await api.post<{ ok: boolean; data: any }>(
     `/api/intercambios/propuestas/${propuestaId}/contraoferta`,
-    { monto_ofertado, mensaje },
-    { headers } as any
+    { monto_ofertado, mensaje }
   );
   return (resp as any).data ?? resp;
 }

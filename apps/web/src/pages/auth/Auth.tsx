@@ -1,3 +1,4 @@
+// apps/web/src/pages/Auth/Auth.tsx (ajusta la ruta si es distinta)
 import Header from "../../components/Header";
 import Login, { type LoginValues } from "./Login";
 import Register, { type RegisterValues } from "./Register";
@@ -14,60 +15,67 @@ export default function Auth() {
   const next = new URLSearchParams(location.search).get("next") || "/perfil";
 
   function persistSession(resp: any) {
-    // Intentamos cubrir distintas formas de respuesta (según tu backend)
+    // Normalizamos posibles formas de respuesta
     const user =
       resp?.user ??
       resp?.data?.user ??
       (typeof resp === "object" && resp?.id ? resp : null);
-    const token = resp?.token ?? resp?.data?.token;
-    const u = JSON.parse(localStorage.getItem("treke_user") || "null");
-    const isAdmin = u?.rol_id === 10003 || u?.id === 20005 || (u?.email || "").toLowerCase() === "admin.treke@gmail.com";
-    navigate(isAdmin ? "/admin" : next, { replace: true });
 
-    
+    const token = resp?.token ?? resp?.data?.token;
+
     if (token) localStorage.setItem("treke_token", token);
     if (user) localStorage.setItem("treke_user", JSON.stringify(user));
 
-    return { user, token };
+    const isAdmin =
+      user?.rol_id === 10003 ||
+      user?.id === 20005 ||
+      (user?.email || "").toLowerCase() === "admin.treke@gmail.com";
+
+    return { user, token, isAdmin };
   }
 
-  async function handleRegister(values: RegisterValues) {
-    try {
-      setStatus("idle");
-      setMsg("");
-      const r = await AuthApi.register(values);
-      setStatus("ok");
-      setMsg("¡Registro completado!");
-
-      // Si tu API de register devuelve user/token, también podemos guardar y redirigir:
-      const { user } = persistSession(r);
-      if (user) {
-        navigate("/perfil", { replace: true });
-      }
-      console.log("register resp:", r);
-    } catch (e: any) {
-      setStatus("err");
-      setMsg(e?.message || "No se pudo registrar");
-    }
-  }
-
+  // 🔐 LOGIN
   async function handleLogin(values: LoginValues) {
     try {
       setStatus("idle");
       setMsg("");
-      const r = await AuthApi.login(values); // resp general
-      persistSession(r);
+
+      const r = await AuthApi.login(values);
+      const { isAdmin } = persistSession(r);
 
       setStatus("ok");
       setMsg("¡Login correcto!");
 
-      // Redirección automática al perfil (o a ?next=)
-      navigate(next, { replace: true });
+      // Redirección automática
+      navigate(isAdmin ? "/admin" : next, { replace: true });
 
       console.log("login resp:", r);
     } catch (e: any) {
       setStatus("err");
       setMsg(e?.message || "Credenciales inválidas");
+    }
+  }
+
+  // 🧾 REGISTER + luego LOGIN automático con las mismas credenciales
+  async function handleRegister(values: RegisterValues) {
+    try {
+      setStatus("idle");
+      setMsg("");
+
+      const r = await AuthApi.register(values);
+      console.log("register resp:", r);
+
+      setStatus("ok");
+      setMsg("¡Registro completado! Iniciando sesión...");
+
+      // Auto-login con el mismo email y password
+      await handleLogin({
+        email: values.email,
+        password: values.password,
+      });
+    } catch (e: any) {
+      setStatus("err");
+      setMsg(e?.message || "No se pudo registrar");
     }
   }
 

@@ -1,8 +1,6 @@
+// apps/api/src/modules/market/market.controller.ts
 import * as svc from "./market.service";
 import { Request, Response } from "express";
-import path from "path";
-
-
 
 const num = (v: any) => (Number.isFinite(Number(v)) ? Number(v) : null);
 
@@ -34,9 +32,8 @@ function requireNumber(raw: any, field: string): number {
   return n;
 }
 
-
-
 export const MarketController = {
+  // LISTADO PÚBLICO
   list: async (req: Request, res: Response) => {
     try {
       const data = await svc.list({
@@ -53,60 +50,82 @@ export const MarketController = {
         offset: req.query.offset ? Number(req.query.offset) : 0,
       });
       res.json({ ok: true, data });
-    } catch (e:any) {
-      res.status(400).json({ ok:false, error: e.message });
+    } catch (e: any) {
+      res.status(400).json({ ok: false, error: e.message });
     }
   },
 
+  // DETALLE (puede ser público, pero si hay token se usa para saber si es favorito)
   detail: async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
-      const viewer = req.header("x-user-id") ? Number(req.header("x-user-id")) : null;
+      if (!Number.isFinite(id)) {
+        throw new Error("id de publicación inválido");
+      }
+
+      const viewer = req.user?.id ?? null; // 🔐 opcional
       const data = await svc.detail(id, viewer);
       res.json({ ok: true, data });
-    } catch (e:any) {
-      res.status(400).json({ ok:false, error: e.message });
+    } catch (e: any) {
+      res.status(400).json({ ok: false, error: e.message });
     }
   },
 
+  // AGREGAR A FAVORITOS (requiere login)
   favAdd: async (req: Request, res: Response) => {
     try {
       const pubId = Number(req.params.id);
-      const userId = req.header("x-user-id") ? Number(req.header("x-user-id")) : Number(req.body?.usuario_id);
-      if (!userId) throw new Error("usuario_id requerido (header x-user-id o body)");
+      if (!Number.isFinite(pubId)) {
+        throw new Error("id de publicación inválido");
+      }
+
+      const userId = req.user?.id; // 🔐
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ ok: false, error: "No autorizado (sin usuario en token)" });
+      }
+
       const data = await svc.favAdd(userId, pubId);
       res.json({ ok: true, data });
-    } catch (e:any) {
-      res.status(400).json({ ok:false, error: e.message });
+    } catch (e: any) {
+      res.status(400).json({ ok: false, error: e.message });
     }
   },
 
+  // QUITAR DE FAVORITOS (requiere login)
   favRemove: async (req: Request, res: Response) => {
     try {
       const pubId = Number(req.params.id);
-      const userId = req.header("x-user-id") ? Number(req.header("x-user-id")) : Number(req.body?.usuario_id);
-      if (!userId) throw new Error("usuario_id requerido (header x-user-id o body)");
+      if (!Number.isFinite(pubId)) {
+        throw new Error("id de publicación inválido");
+      }
+
+      const userId = req.user?.id; // 🔐
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ ok: false, error: "No autorizado (sin usuario en token)" });
+      }
+
       const data = await svc.favRemove(userId, pubId);
       res.json({ ok: true, data });
-    } catch (e:any) {
-      res.status(400).json({ ok:false, error: e.message });
+    } catch (e: any) {
+      res.status(400).json({ ok: false, error: e.message });
     }
   },
-    create: async (req: Request, res: Response) => {
+
+  // CREAR PUBLICACIÓN (requiere login)
+  create: async (req: Request, res: Response) => {
     try {
-      // 👀 Útil para depurar si aún hay problemas
       console.log("BODY CREAR PUBLICACION:", req.body);
 
-      const userIdHeader = req.header("x-user-id");
-      const userIdBody = req.body?.usuario_id;
-      const usuario_id = userIdHeader
-        ? toIntOrNull(userIdHeader)
-        : toIntOrNull(userIdBody);
+      const usuario_id = req.user?.id; // 🔐 viene del JWT
 
       if (!usuario_id) {
-        throw new Error(
-          "usuario_id requerido (en header x-user-id o en body.usuario_id)"
-        );
+        return res
+          .status(401)
+          .json({ ok: false, error: "No autorizado (sin usuario en token)" });
       }
 
       const {
@@ -128,16 +147,15 @@ export const MarketController = {
         throw new Error("titulo, descripcion y ubicacion_texto son requeridos");
       }
 
-      const valorCreditosNum = requireInt(
-        valor_creditos,
-        "valor_creditos"
-      ); // INTEGER
-      const categoriaIdNum = requireInt(categoria_id, "categoria_id"); // INTEGER
+      const valorCreditosNum = requireInt(valor_creditos, "valor_creditos");
+      const categoriaIdNum = requireInt(categoria_id, "categoria_id");
 
       const latNum = toNumberOrNull(latitud);
       const lonNum = toNumberOrNull(longitud);
       const pesoNum =
-        peso_aprox_kg === undefined || peso_aprox_kg === null || peso_aprox_kg === ""
+        peso_aprox_kg === undefined ||
+        peso_aprox_kg === null ||
+        peso_aprox_kg === ""
           ? 0
           : requireNumber(peso_aprox_kg, "peso_aprox_kg");
 
@@ -163,7 +181,7 @@ export const MarketController = {
         longitud: lonNum,
         peso_aprox_kg: pesoNum,
         categoria_id: categoriaIdNum,
-        usuario_id,
+        usuario_id, // 🔐 tomado del token
         estado_id: estadoIdNum,
         factor_ids: factoresIdsNum,
         sin_impacto: !!sin_impacto,
@@ -177,21 +195,24 @@ export const MarketController = {
     }
   },
 
+  // CATÁLOGOS
   categorias: async (_: Request, res: Response) => {
     const data = await svc.categorias();
     res.json({ ok: true, data });
   },
+
   estados: async (_: Request, res: Response) => {
     const data = await svc.estadosPublicacion();
     res.json({ ok: true, data });
   },
 
-    factores: async (_: Request, res: Response) => {
+  factores: async (_: Request, res: Response) => {
     const data = await svc.factoresEcologicos();
     res.json({ ok: true, data });
   },
 
-    uploadImages: async (req: Request, res: Response) => {
+  // UPLOAD DE IMÁGENES (requiere login, ya está protegido en routes)
+  uploadImages: async (req: Request, res: Response) => {
     try {
       const files = (req as any).files as Express.Multer.File[] | undefined;
 
@@ -200,11 +221,9 @@ export const MarketController = {
       }
 
       const baseUrl =
-        process.env.API_PUBLIC_URL ||
-        `${req.protocol}://${req.get("host")}`;
+        process.env.API_PUBLIC_URL || `${req.protocol}://${req.get("host")}`;
 
       const urls = files.map((f) => {
-        // f.filename es el nombre final en disco
         return `${baseUrl}/uploads/market/${f.filename}`;
       });
 
