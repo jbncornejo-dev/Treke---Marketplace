@@ -8,40 +8,11 @@ export const SQL = {
     RETURNING id, email, rol_id, estado, created_at;
   `,
 
-  crearPerfil: `
-    INSERT INTO perfil_usuario (full_name, usuario_id)
-    VALUES ($1, $2)
-    RETURNING id, full_name, foto;
-  `,
-
-  crearBilletera: `
-    INSERT INTO billetera (usuario_id, saldo_disponible, saldo_retenido)
-    VALUES ($1, 0, 0)
-    RETURNING id, saldo_disponible, saldo_retenido;
-  `,
-
   // idempotente, no migra nada
   asegurarTipoMovimiento: `
     INSERT INTO tipos_movimiento (codigo, descripcion, es_debito, es_activo)
     SELECT 'BONO_BIENVENIDA', 'Créditos de bienvenida por registro', false, true
     WHERE NOT EXISTS (SELECT 1 FROM tipos_movimiento WHERE codigo='BONO_BIENVENIDA');
-  `,
-
-  aplicarBonoBienvenida: `
-    WITH b AS (
-      SELECT id, saldo_disponible FROM billetera WHERE usuario_id = $1 FOR UPDATE
-    ), upd AS (
-      UPDATE billetera
-      SET saldo_disponible = b.saldo_disponible + 5,
-          updated_at = now()
-      FROM b
-      WHERE billetera.id = b.id
-      RETURNING billetera.id AS billetera_id, (b.saldo_disponible) AS saldo_anterior, (b.saldo_disponible + 5) AS saldo_posterior
-    )
-    INSERT INTO movimientos (monto, saldo_anterior, saldo_posterior, descripcion, referencia_id, tipo_referencia, billetera_user_id, tipo_mov_id)
-    SELECT 5, upd.saldo_anterior, upd.saldo_posterior, 'Bono bienvenida', NULL, 'registro', upd.billetera_id,
-           (SELECT id FROM tipos_movimiento WHERE codigo='BONO_BIENVENIDA')
-    FROM upd;
   `,
 
   // --- Login mínimo (pruebas) ---
@@ -187,9 +158,15 @@ export const SQL = {
   // ---- Movimientos de billetera (paginado)
   panelMovimientos: `
     SELECT
-      m.id, m.fecha_movimiento, m.monto, m.saldo_anterior, m.saldo_posterior,
-      m.descripcion, m.tipo_referencia, m.referencia_id,
-      tm.codigo AS tipo_codigo, tm.descripcion AS tipo_descripcion, tm.es_debito
+      m.id, 
+      m.fecha_movimiento, 
+      m.monto, 
+      m.saldo_anterior, 
+      m.saldo_posterior,
+      -- Ya no pedimos m.descripcion ni referencias porque no existen en la tabla
+      tm.codigo AS tipo_codigo, 
+      tm.descripcion AS descripcion, -- Usamos la descripción del 'Tipo' como la principal
+      tm.es_debito
     FROM movimientos m
     JOIN tipos_movimiento tm ON tm.id = m.tipo_mov_id
     WHERE m.billetera_user_id = $1

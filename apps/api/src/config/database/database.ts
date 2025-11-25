@@ -4,22 +4,33 @@ dotenv.config();
 import pg from "pg";
 const { Pool } = pg;
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 export const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: process.env.PGHOST,
+  port: Number(process.env.PGPORT),
+  user: process.env.PGUSER,
+  password: process.env.PGPASSWORD,
+  database: process.env.PGDATABASE,
+  // 👇 AQUÍ ESTÁ EL CAMBIO IMPORTANTE 👇
+  ssl: {
+    rejectUnauthorized: false, 
+  },
 });
 
 export async function testConnection() {
-  const res = await pool.query("SELECT NOW() as now");
-  console.log("✅ Conectado a PostgreSQL:", res.rows[0].now);
+  try {
+    const res = await pool.query("SELECT NOW() as now");
+    console.log("✅ Conectado a PostgreSQL:", res.rows[0].now);
+  } catch (error) {
+    console.error("❌ Error conectando a la BD:", error);
+  }
 }
 
 // 🔧 FALTABA: helper de transacciones
 export async function withTx<T>(fn: (c: pg.PoolClient) => Promise<T>): Promise<T> {
-  const client = await pool.connect();
+  // Nota: connect() también intentará usar la config SSL del pool
+  const client = await pool.connect(); 
   try {
     await client.query("BEGIN");
     const out = await fn(client);

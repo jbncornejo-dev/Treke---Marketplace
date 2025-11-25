@@ -1,11 +1,11 @@
+// apps/api/src/modules/usuarios/usuarios.service.ts
 import { pool } from '../../config/database/database';
 import { PoolClient } from 'pg';
 import { SQL } from './usuarios.sql';
 import bcrypt from 'bcryptjs';
 import { signToken, JwtUser } from '../../middlewares/auth';
 
-
-// Helper local de transacciones usando TU pool
+// Helper local de transacciones
 async function withTx<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
   try {
@@ -21,6 +21,9 @@ async function withTx<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
   }
 }
 
+// ------------------------------------------------------------------
+// 🚀 AQUÍ ESTÁ EL CAMBIO PRINCIPAL (registrarUsuario)
+// ------------------------------------------------------------------
 export async function registrarUsuario(input: {
   email: string; password: string; full_name: string; acepta_terminos: boolean; rol_id?: number;
 }) {
@@ -33,24 +36,44 @@ export async function registrarUsuario(input: {
   const hashedPassword = await bcrypt.hash(input.password, 10);
 
   return withTx(async (client: PoolClient) => {
+    // 1. Verificar si existe email
     const dup = await client.query(SQL.existeEmail, [input.email]);
     if (dup.rowCount) throw new Error('El email ya existe');
 
     const rolId = input.rol_id ?? 10001; // usuario por defecto
 
+    // 2. Crear Usuario 
+    // (⚡ EL TRIGGER SE DISPARA AQUÍ y crea perfil, billetera, bono, etc.)
     const u = await client.query(SQL.crearUsuario, [input.email, hashedPassword, rolId]);
     const user = u.rows[0];
 
-    const p = await client.query(SQL.crearPerfil, [input.full_name, user.id]);
-    const b = await client.query(SQL.crearBilletera, [user.id]);
+    // 3. Actualizar el nombre del perfil 
+    // (El trigger le puso "Usuario Nuevo", aquí le ponemos el nombre real que envió el usuario)
+    const p = await client.query(SQL.updatePerfil, [
+      user.id, 
+      input.full_name, 
+      null, // acerca_de (mantiene el default o null)
+      null, // telefono
+      null  // fecha_nacimiento
+    ]);
 
-    await client.query(SQL.asegurarTipoMovimiento);
-    await client.query(SQL.aplicarBonoBienvenida, [user.id]);
+    // 4. Recuperar la Billetera creada por el Trigger
+    // (Hacemos un SELECT simple para devolverla al frontend)
+    const b = await client.query(`SELECT id, saldo_disponible, saldo_retenido FROM billetera WHERE usuario_id = $1`, [user.id]);
 
+    // Opcional: Asegurar que el tipo de movimiento existe (si lo dejaste en SQL)
+    if (SQL.asegurarTipoMovimiento) {
+        await client.query(SQL.asegurarTipoMovimiento);
+    }
+    
+    // Retornamos la estructura completa
     return { user, perfil: p.rows[0], billetera: b.rows[0] };
   });
 }
 
+// ------------------------------------------------------------------
+// EL RESTO DEL ARCHIVO SE QUEDA IGUAL (Funcionará correctamente)
+// ------------------------------------------------------------------
 
 export async function loginPlano(email: string, password: string) {
   const r = await pool.query(SQL.loginPlano, [email]);
@@ -58,7 +81,7 @@ export async function loginPlano(email: string, password: string) {
 
   const row = r.rows[0] as any;
 
-  // Verificar estado del usuario
+  // Verificar estado
   if (row.estado === "suspendido") {
     throw new Error("Usuario suspendido");
   }
@@ -66,7 +89,6 @@ export async function loginPlano(email: string, password: string) {
   const dbPassword: string = row.password;
   let ok = false;
 
-  // Detectar si la contraseña en BD ya es bcrypt o todavía es texto plano
   const isBcrypt =
     typeof dbPassword === "string" &&
     (dbPassword.startsWith("$2a$") ||
@@ -74,14 +96,10 @@ export async function loginPlano(email: string, password: string) {
       dbPassword.startsWith("$2y$"));
 
   if (isBcrypt) {
-    // ✅ Caso nuevo: ya está hasheada
     ok = await bcrypt.compare(password, dbPassword);
   } else {
-    // 🧓 Caso legacy: estaba en texto plano
     ok = password === dbPassword;
-
     if (ok) {
-      // Migrar automáticamente a bcrypt
       const newHash = await bcrypt.hash(password, 10);
       await pool.query(
         "UPDATE usuario SET password = $1, updated_at = now() WHERE id = $2",
@@ -105,8 +123,6 @@ export async function loginPlano(email: string, password: string) {
 
   return { ok: true, user, token };
 }
-
-
 
 export async function getPerfil(usuarioId: number) {
   const r = await pool.query(SQL.getPerfilFull, [usuarioId]);
@@ -173,6 +189,7 @@ export async function eliminarUsuario(_actorId: number, usuarioId: number) {
   if (!r.rowCount) throw new Error('Usuario no encontrado');
   return r.rows[0]; // { id }
 }
+
 export async function getPanel(
   usuarioId: number,
   pubsLimit = 12,
