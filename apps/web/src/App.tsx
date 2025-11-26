@@ -64,7 +64,7 @@ export default function App() {
           <Route path="/settings" element={<SettingsPage />} />
 
           {/* Créditos */}
-          <Route path="/creditos/paquetes" element={<ComprarPaquetes />} />
+          <Route path="/creditosyplanes" element={<ComprarPaquetes />} />
 
           {/* Organización y Admin */}
           <Route path="/org/reportes" element={<OrgReportsPage />} />

@@ -4,13 +4,11 @@ import { authMiddleware } from "../../middlewares/auth";
 
 const r = Router();
 
-// listar paquetes de créditos (público)
-r.get("/creditos/paquetes", C.paquetes);
+// Obtener lista de paquetes, planes y mi suscripción actual
+r.get("/creditos/catalogo", authMiddleware, C.getCatalogo);
 
-// saldo de billetera (requiere login)
-r.get("/creditos/saldo", authMiddleware, C.saldo);
-
-// comprar paquete (requiere login)
-r.post("/creditos/comprar", authMiddleware, C.comprar);
+// Comprar (Simulado)
+r.post("/creditos/paquetes/comprar", authMiddleware, C.buyPaquete);
+r.post("/creditos/planes/comprar", authMiddleware, C.buyPlan);
 
 export default r;

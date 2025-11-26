@@ -2,51 +2,40 @@ import { Request, Response } from "express";
 import * as svc from "./creditos.service";
 
 export const CreditosController = {
-  paquetes: async (_: Request, res: Response) => {
+  getCatalogo: async (req: Request, res: Response) => {
     try {
-      const data = await svc.listarPaquetesActivos();
+      const userId = req.user?.id;
+      if (!userId) throw new Error("Usuario no autenticado");
+
+      const data = await svc.getCatalogoCreditos(userId);
       res.json({ ok: true, data });
     } catch (e: any) {
       res.status(400).json({ ok: false, error: e.message });
     }
   },
 
-  saldo: async (req: Request, res: Response) => {
+  buyPaquete: async (req: Request, res: Response) => {
     try {
-      const usuarioId = req.user?.id; // 🔐 viene del JWT (authMiddleware)
+      const userId = req.user?.id;
+      const { paqueteId } = req.body;
+      if (!userId || !paqueteId) throw new Error("Datos incompletos");
 
-      if (!usuarioId) {
-        return res
-          .status(401)
-          .json({ ok: false, error: "No autorizado (sin usuario en token)" });
-      }
-
-      const data = await svc.obtenerBilletera(usuarioId);
+      const data = await svc.comprarPaquete(userId, Number(paqueteId));
       res.json({ ok: true, data });
     } catch (e: any) {
-      console.error("Error saldo billetera:", e);
       res.status(400).json({ ok: false, error: e.message });
     }
   },
 
-  comprar: async (req: Request, res: Response) => {
+  buyPlan: async (req: Request, res: Response) => {
     try {
-      const usuarioId = req.user?.id; // 🔐
-      if (!usuarioId) {
-        return res
-          .status(401)
-          .json({ ok: false, error: "No autorizado (sin usuario en token)" });
-      }
+      const userId = req.user?.id;
+      const { planId } = req.body;
+      if (!userId || !planId) throw new Error("Datos incompletos");
 
-      const paqueteId = Number(req.body?.paquete_id);
-      if (!Number.isInteger(paqueteId) || paqueteId <= 0) {
-        throw new Error("paquete_id debe ser un entero válido");
-      }
-
-      const data = await svc.comprarPaquete(usuarioId, paqueteId);
-      res.status(201).json({ ok: true, data });
+      const data = await svc.comprarPlan(userId, Number(planId));
+      res.json({ ok: true, data });
     } catch (e: any) {
-      console.error("Error comprar paquete:", e);
       res.status(400).json({ ok: false, error: e.message });
     }
   },

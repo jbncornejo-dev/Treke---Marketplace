@@ -1,40 +1,48 @@
-// apps/web/src/api/creditos.ts
 import { api } from "./client";
 
-export type PaqueteCreditos = {
+export type PaqueteCredito = {
   id: number;
   nombre_paq: string;
   descripcion: string;
   cant_creditos: number;
-  precio: string;
+  precio: number;
 };
 
-export type Billetera = {
+export type PlanSuscripcion = {
   id: number;
-  saldo_disponible: number;
-  saldo_retenido: number;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  duracion_dias: number;
+  creditos_incluidos: number;
+  beneficios: string[]; // JSONB suele venir como array
 };
 
-export async function getPaquetesCreditos(): Promise<PaqueteCreditos[]> {
-  const r = await api.get<{ ok: boolean; data: PaqueteCreditos[] }>(
-    "/api/creditos/paquetes"
-  );
-  return (r as any).data ?? (r as any);
-}
+export type SuscripcionUser = {
+  id: number;
+  nombre_plan: string;
+  fecha_ini: string;
+  fecha_fin: string;
+  estado: string;
+};
 
-export async function getSaldoBilletera(): Promise<Billetera> {
-  // backend ahora obtiene el usuario desde el JWT (authMiddleware)
-  const r = await api.get<{ ok: boolean; data: Billetera }>(
-    "/api/creditos/saldo"
-  );
-  return (r as any).data ?? (r as any);
+export type CatalogoResponse = {
+  paquetes: PaqueteCredito[];
+  planes: PlanSuscripcion[];
+  suscripcionActual: SuscripcionUser | null;
+};
+
+export async function getCatalogoCreditos() {
+  const resp = await api.get<{ ok: boolean; data: CatalogoResponse }>("/api/creditos/catalogo");
+  return (resp as any).data ?? null;
 }
 
 export async function comprarPaquete(paqueteId: number) {
-  // solo enviamos el paquete, el usuario viene del token
-  const r = await api.post<{ ok: boolean; data: any }>(
-    "/api/creditos/comprar",
-    { paquete_id: paqueteId }
-  );
-  return (r as any).data ?? (r as any);
+  const resp = await api.post("/api/creditos/paquetes/comprar", { paqueteId });
+  return (resp as any).data;
+}
+
+export async function comprarPlan(planId: number) {
+  const resp = await api.post("/api/creditos/planes/comprar", { planId });
+  return (resp as any).data;
 }
