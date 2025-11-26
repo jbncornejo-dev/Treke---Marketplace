@@ -1,8 +1,13 @@
 // apps/web/src/api/market.ts
 import { api } from "./client";
 
-export type SortKey = "recent" | "price_asc" | "price_desc" | "near";
+// 1. Eliminada la opción "near" porque ya no hay geolocalización
+export type SortKey = "recent" | "price_asc" | "price_desc";
 
+/* COMENTADO: El backend ya no tiene la ruta de factores ecológicos activa.
+   Si en el futuro la reactivas, descomenta esto.
+*/
+/*
 export type FactorEcologico = {
   id: number;
   nombre_factor: string;
@@ -12,10 +17,19 @@ export type FactorEcologico = {
 
 export async function getFactoresEcologicos(): Promise<FactorEcologico[]> {
   const r = await api.get<{ ok: boolean; data: FactorEcologico[] }>(
-    "/api/catalogo/factores-ecologicos"
+    "/api/market/factores" // Ajustado a la ruta probable
   );
   return (r as any).data ?? (r as any);
 }
+*/
+export type ReviewItem = {
+  id: number;
+  calificacion: number;
+  comentario: string;
+  created_at: string;
+  autor_nombre: string;
+  autor_foto?: string;
+};
 
 export type MarketItem = {
   id: number;
@@ -23,18 +37,22 @@ export type MarketItem = {
   descripcion: string;
   valor_creditos: number;
   ubicacion_texto: string;
-  latitud?: number | null;
-  longitud?: number | null;
+  peso_aprox_kg: number; // Nuevo campo
   created_at: string;
   usuario_id: number;
   categoria_id: number;
   estado_id: number;
+  
+  // Datos enriquecidos (JOINs)
   categoria: string;
+  categoria_color?: string; // Nuevo del SQL
+  categoria_icono?: string; // Nuevo del SQL
   estado_nombre: string;
   vendedor_nombre?: string | null;
   vendedor_rating?: string | number | null;
   foto_principal?: string | null;
-  distancia_km?: number | null;
+
+  is_fav?: boolean;
 };
 
 export type MarketListResp = {
@@ -42,29 +60,28 @@ export type MarketListResp = {
   page: { total: number; limit: number; offset: number; has_more: boolean };
 };
 
+// 2. Función LIST limpia de coordenadas
 export async function list(opts: {
   q?: string;
   categoria_id?: number | null;
   min_cred?: number | null;
   max_cred?: number | null;
   estado_id?: number | null;
-  lat?: number | null;
-  lng?: number | null;
-  radio_km?: number | null;
+  // Eliminados: lat, lng, radio_km
   sort?: SortKey;
   limit?: number;
   offset?: number;
 }): Promise<MarketListResp> {
   const p = new URLSearchParams();
+  
   if (opts.q) p.set("q", opts.q);
-  if (opts.categoria_id != null)
-    p.set("categoria_id", String(opts.categoria_id));
+  if (opts.categoria_id != null) p.set("categoria_id", String(opts.categoria_id));
   if (opts.min_cred != null) p.set("min_cred", String(opts.min_cred));
   if (opts.max_cred != null) p.set("max_cred", String(opts.max_cred));
   if (opts.estado_id != null) p.set("estado_id", String(opts.estado_id));
-  if (opts.lat != null) p.set("lat", String(opts.lat));
-  if (opts.lng != null) p.set("lng", String(opts.lng));
-  if (opts.radio_km != null) p.set("radio_km", String(opts.radio_km));
+  
+  // lat, lng y radio_km ya no se envían
+  
   p.set("sort", opts.sort || "recent");
   p.set("limit", String(opts.limit ?? 12));
   p.set("offset", String(opts.offset ?? 0));
@@ -80,6 +97,9 @@ export type MarketDetail = MarketItem & {
   total_propuestas: number;
   is_fav: boolean;
   vendedor_email: string;
+  
+  // 👇 NUEVO CAMPO
+  reviews: ReviewItem[];
 };
 
 export function getCurrentUserId(): number | null {
@@ -110,19 +130,19 @@ export async function toggleFav(id: number, wantFav: boolean) {
   return api.del(`/api/market/${id}/fav`);
 }
 
+// 3. Payload de creación actualizado
 export type CrearPublicacionPayload = {
   titulo: string;
   descripcion: string;
   valor_creditos: number;
   ubicacion_texto: string;
-  latitud?: number | null;
-  longitud?: number | null;
+  // Eliminados: latitud, longitud
   peso_aprox_kg?: number | null;
   categoria_id: number;
   estado_id?: number | null;
-  factor_ids: number[]; // ids de factores_ecologicos seleccionados
-  sin_impacto: boolean; // true si marcó "ninguna"
-  fotos: string[]; // por ahora URLs
+  factor_ids: number[]; 
+  sin_impacto: boolean; 
+  fotos: string[]; 
 };
 
 export async function crearPublicacion(payload: CrearPublicacionPayload) {
@@ -130,19 +150,20 @@ export async function crearPublicacion(payload: CrearPublicacionPayload) {
   if (!uid) throw new Error("Debes iniciar sesión");
 
   const resp = await api.post<{ ok: boolean; data: { id: number } }>(
-    "/api/market",
+    "/api/market", // Esto apunta a MarketController.create
     payload
   );
 
   return (resp as any).data ?? (resp as any);
 }
 
-// catálogos dinámicos
-export async function getCategorias(): Promise<Array<{ id: number; nombre: string }>> {
+// 4. Catálogos: Rutas ajustadas para apuntar a MarketController
+// Antes tenías /api/catalogo/..., pero tu controller está en /api/market/...
+export async function getCategorias(): Promise<Array<{ id: number; nombre: string; icono?: string; color?: string }>> {
   const r = await api.get<{
     ok: boolean;
-    data: Array<{ id: number; nombre: string }>;
-  }>("/api/catalogo/categorias");
+    data: Array<{ id: number; nombre: string; icono?: string; color?: string }>;
+  }>("/api/market/categorias"); 
   return (r as any).data ?? (r as any);
 }
 
@@ -152,14 +173,14 @@ export async function getEstadosPublicacion(): Promise<
   const r = await api.get<{
     ok: boolean;
     data: Array<{ id: number; nombre: string }>;
-  }>("/api/catalogo/estados-publicacion");
+  }>("/api/market/estados");
   return (r as any).data ?? (r as any);
 }
 
-// Upload con axios (ya NO usamos fetch)
+// Upload con axios
 export async function uploadMarketImages(files: File[]): Promise<string[]> {
   const form = new FormData();
-  files.forEach((file) => form.append("images", file)); // mismo nombre que en multer
+  files.forEach((file) => form.append("images", file)); 
 
   const r = await api.post<{ ok: boolean; data: string[] }>(
     "/api/market/upload-images",

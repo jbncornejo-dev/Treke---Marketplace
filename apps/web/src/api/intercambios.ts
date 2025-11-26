@@ -1,15 +1,19 @@
 // apps/web/src/api/intercambios.ts
 import { api } from "./client";
-import { getCurrentUserId } from "./market"; // lo sigues usando para validar login
+import { getCurrentUserId } from "./market";
 
+// 1. Tipos ajustados a los alias del SQL actual
 export type PropuestaResumen = {
   id: number;
   tipo: "enviada" | "recibida";
   estado: string;
   created_at: string;
   titulo: string;
-  monto_ofertado: number;
-  valor_publicacion: number;
+  
+  // CAMBIO: En el SQL ahora usas "AS monto_intercambio" (valor fijo)
+  monto_intercambio: number; 
+  
+  valor_publicacion: number; // Esto suele ser redundante con el de arriba, pero el SQL lo trae
   publicacion_id: number;
   contraparte_id: number;
   puede_responder: boolean;
@@ -27,7 +31,10 @@ export type IntercambioResumen = {
   comprador_id: number;
   vendedor_id: number;
   titulo: string;
-  valor_creditos: number;
+  
+  // CAMBIO: En el SQL ahora usas "AS valor_original_pub"
+  valor_original_pub: number; 
+  
   publicacion_id: number;
 };
 
@@ -37,23 +44,23 @@ export type MisIntercambiosResponse = {
   page: { page: number; pageSize: number };
 };
 
-// RF-18
+// RF-18: Iniciar Propuesta
+// ELIMINADO: monto_ofertado (ya no se negocia precio)
 export async function iniciarPropuesta(
   publicacionId: number,
-  mensaje?: string,
-  monto_ofertado?: number
+  mensaje?: string
 ) {
   const uid = getCurrentUserId();
   if (!uid) throw new Error("Debes iniciar sesión");
 
   const resp = await api.post<{ ok: boolean; data: any }>(
     "/api/intercambios/propuestas",
-    { publicacion_id: publicacionId, mensaje, monto_ofertado }
+    { publicacion_id: publicacionId, mensaje }
   );
   return (resp as any).data ?? resp;
 }
 
-// RF-19, RF-20
+// RF-19, RF-20: Aceptar
 export async function aceptarPropuesta(propuestaId: number) {
   const uid = getCurrentUserId();
   if (!uid) throw new Error("Debes iniciar sesión");
@@ -65,7 +72,7 @@ export async function aceptarPropuesta(propuestaId: number) {
   return (resp as any).data ?? resp;
 }
 
-// RF-21, RF-22
+// RF-21, RF-22: Confirmar
 export async function confirmarIntercambio(intercambioId: number) {
   const uid = getCurrentUserId();
   if (!uid) throw new Error("Debes iniciar sesión");
@@ -77,7 +84,7 @@ export async function confirmarIntercambio(intercambioId: number) {
   return (resp as any).data ?? resp;
 }
 
-// RF-23
+// RF-23: Cancelar
 export async function cancelarIntercambio(
   intercambioId: number,
   motivo?: string
@@ -92,7 +99,7 @@ export async function cancelarIntercambio(
   return (resp as any).data ?? resp;
 }
 
-// RF-24 – página propia de intercambios
+// RF-24: Listado propio
 export async function fetchMisIntercambios(
   usuarioId: number,
   opts?: { page?: number; pageSize?: number }
@@ -123,17 +130,3 @@ export async function rechazarPropuesta(
   return (resp as any).data ?? resp;
 }
 
-export async function contraofertarPropuesta(
-  propuestaId: number,
-  monto_ofertado: number,
-  mensaje?: string
-) {
-  const uid = getCurrentUserId();
-  if (!uid) throw new Error("Debes iniciar sesión");
-
-  const resp = await api.post<{ ok: boolean; data: any }>(
-    `/api/intercambios/propuestas/${propuestaId}/contraoferta`,
-    { monto_ofertado, mensaje }
-  );
-  return (resp as any).data ?? resp;
-}

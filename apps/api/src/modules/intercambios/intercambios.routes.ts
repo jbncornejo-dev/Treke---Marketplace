@@ -5,14 +5,24 @@ import { authMiddleware, selfOrAdmin } from "../../middlewares/auth";
 
 const r = Router();
 
+// ==========================================
+// 1. GESTIÓN DE PROPUESTAS
+// ==========================================
 r.post("/intercambios/propuestas", authMiddleware, C.iniciarPropuesta);
 r.post("/intercambios/propuestas/:id/aceptar", authMiddleware, C.aceptarPropuesta);
 r.post("/intercambios/propuestas/:id/rechazar", authMiddleware, C.rechazarPropuesta);
-r.post("/intercambios/propuestas/:id/contraoferta", authMiddleware, C.contraoferta);
 
+
+// ==========================================
+// 2. GESTIÓN DE INTERCAMBIOS (Confirmación)
+// ==========================================
 r.post("/intercambios/:id/confirmar", authMiddleware, C.confirmar);
 r.post("/intercambios/:id/cancelar", authMiddleware, C.cancelar);
 
+
+// ==========================================
+// 3. HISTORIAL Y PERFIL
+// ==========================================
 r.get("/usuarios/:id/intercambios", authMiddleware, selfOrAdmin, C.resumenUsuario);
 
 export default r;

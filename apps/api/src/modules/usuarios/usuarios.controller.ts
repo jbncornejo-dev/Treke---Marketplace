@@ -103,15 +103,16 @@ export const UsuariosController = {
     }
   },
 
-   eliminar: async (req: Request, res: Response) => {
-  try {
-    const usuarioId = Number(req.params.id);
-    const data = await svc.eliminarUsuario(0, usuarioId); // <- hard delete
-    return res.json({ ok: true, data });
-  } catch (e:any) {
-    return res.status(400).json({ ok:false, error: e.message });
-  }
-},
+  eliminar: async (req: Request, res: Response) => {
+    try {
+      const usuarioId = Number(req.params.id);
+      const data = await svc.eliminarUsuario(0, usuarioId); // <- hard delete
+      return res.json({ ok: true, data });
+    } catch (e:any) {
+      return res.status(400).json({ ok:false, error: e.message });
+    }
+  },
+
  panel: async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
@@ -126,4 +127,36 @@ export const UsuariosController = {
       return res.status(400).json({ ok: false, error: e.message });
     }
   },
+
+  // --- DIRECCIONES ---
+  listarDirecciones: async (req: Request, res: Response) => {
+    try {
+      const uid = Number(req.params.id); // O usar req.user.id si prefieres
+      const data = await svc.getDirecciones(uid);
+      res.json({ ok: true, data });
+    } catch (e: any) {
+      res.status(400).json({ ok: false, error: e.message });
+    }
+  },
+
+  crearDireccion: async (req: Request, res: Response) => {
+    try {
+      const uid = Number(req.params.id);
+      const data = await svc.addDireccion(uid, req.body);
+      res.json({ ok: true, data });
+    } catch (e: any) {
+      res.status(400).json({ ok: false, error: e.message });
+    }
+  },
+
+  borrarDireccion: async (req: Request, res: Response) => {
+    try {
+      const uid = Number(req.params.id);
+      const did = Number(req.params.did);
+      await svc.deleteDireccion(uid, did);
+      res.json({ ok: true, message: "Dirección eliminada" });
+    } catch (e: any) {
+      res.status(400).json({ ok: false, error: e.message });
+    }
+  }
 };

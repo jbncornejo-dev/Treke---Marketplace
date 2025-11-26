@@ -21,4 +21,10 @@ r.patch('/admin/usuarios/:id/rol', authMiddleware, adminOnly, C.cambiarRol);
 r.patch('/admin/usuarios/:id/suspender', authMiddleware, adminOnly, C.suspender);
 r.delete('/admin/usuarios/:id', authMiddleware, adminOnly, C.eliminar);
 
+// Rutas Direcciones
+r.get('/usuarios/:id/direcciones', authMiddleware, selfOrAdmin, C.listarDirecciones);
+r.post('/usuarios/:id/direcciones', authMiddleware, selfOrAdmin, C.crearDireccion);
+r.delete('/usuarios/:id/direcciones/:did', authMiddleware, selfOrAdmin, C.borrarDireccion);
+
+
 export default r;

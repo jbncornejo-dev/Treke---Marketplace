@@ -1,12 +1,9 @@
+// apps/web/src/pages/Profile/Profile.tsx
 import { useEffect, useMemo, useState } from "react";
-import Header from "../../components/Header";
-import { fetchPanel, getCurrentUserId } from "../../api/profile";
-import type { PanelResponse } from "../../api/profile";
 import { Link } from "react-router-dom";
+import { fetchPanel, getCurrentUserId, type PanelResponse } from "../../api/profile";
 
-
-
-type Tab = "pubs" | "movs" | "impact";
+type Tab = "pubs" | "movs" | "impact" | "reviews";
 
 export default function Profile() {
   const [data, setData] = useState<PanelResponse | null>(null);
@@ -39,177 +36,239 @@ export default function Profile() {
     return data.usuario.full_name || data.usuario.email.split("@")[0];
   }, [data]);
 
-  if (loading) {
-    return (
-      <div className="min-h-dvh bg-neutral-950 text-neutral-100">
-        <Header title="Mi Perfil" />
-        <main className="mx-auto max-w-6xl p-6">Cargando…</main>
-      </div>
-    );
-  }
-  if (msg) {
-    return (
-      <div className="min-h-dvh bg-neutral-950 text-neutral-100">
-        <Header title="Mi Perfil" />
-        <main className="mx-auto max-w-6xl p-6">{msg}</main>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#f6f8f7] dark:bg-[#112117]"><div className="animate-spin rounded-full h-8 w-8 border-2 border-[#2ecc71] border-t-transparent"/></div>;
+  
+  if (msg) return <div className="min-h-screen flex items-center justify-center bg-[#f6f8f7] dark:bg-[#112117] text-gray-500">{msg}</div>;
+  
   if (!data) return null;
 
   const saldo = Number(data.billetera?.saldo_disponible ?? 0);
   const trueques = Number(data.metricas?.intercambios_totales ?? 0);
   const co2 = Number(data.impacto?.total_co2_evitado ?? 0);
+  const rating = Number(data.usuario.calificacion_prom ?? 0);
 
   return (
-    <div className="min-h-dvh bg-neutral-950 text-neutral-100">
-      <Header title="Mi Perfil" />
-      <div className="mx-auto max-w-6xl p-4">
-        {/* Header usuario */}
-        <div className="flex items-center gap-4">
-          <div className="size-16 rounded-full bg-neutral-800 overflow-hidden flex items-center justify-center">
-            {data.usuario.foto ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.usuario.foto} alt="avatar" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-2xl opacity-70">👤</span>
-            )}
-          </div>
-          <div className="flex-1">
-            <h2 className="text-xl font-bold">{nombre}</h2>
-            {data.usuario.acerca_de && (
-              <p className="text-sm text-neutral-300">{data.usuario.acerca_de}</p>
-            )}
-          </div>
-
-          {/* Acciones del perfil (mover aquí el botón de reportes) */}
-          <div className="flex items-center gap-2">
-            <Link
-              to="/settings"
-              className="rounded-lg border border-neutral-700 px-3 py-2 text-sm hover:bg-neutral-800"
-            >
-              Configuración
-            </Link>
-            <Link
-              to="/perfil/reportes"  // usa /reports (y también mapeamos /reportes en rutas)
-              className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 py-2 text-sm font-semibold text-white"
-            >
-              Ver reportes
-            </Link>
-            <Link
-              to="/perfil/intercambios"
-              className="mt-2 inline-flex text-xs text-emerald-400 hover:underline"
-            >
-              Ver propuestas e intercambios →
-            </Link>
+    <div className="min-h-screen bg-[#f6f8f7] dark:bg-[#112117] text-[#112117] dark:text-[#f5f5f5] font-sans pb-24 transition-colors">
+      
+      {/* --- HEADER PERFIL --- */}
+      <div className="bg-white dark:bg-[#1a2e22] border-b border-gray-200 dark:border-gray-800 pt-6 pb-4 px-4">
+         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center gap-6">
             
-          </div>
-        </div>
-
-        {/* KPIs */}
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <KPI label="Créditos Verdes" value={saldo.toLocaleString()} icon="🌿" highlight />
-          <KPI label="Trueques" value={trueques.toString()} icon="🔁" />
-          <KPI label="CO₂ Ahorrado" value={`${co2} kg`} icon="🌍" />
-        </div>
-
-        {/* Tabs */}
-        <div className="mt-6 border-b border-neutral-800 flex">
-          <TabBtn active={tab==="pubs"} onClick={()=>setTab("pubs")}>Mis Publicaciones</TabBtn>
-          <TabBtn active={tab==="movs"} onClick={()=>setTab("movs")}>Transacciones</TabBtn>
-          <TabBtn active={tab==="impact"} onClick={()=>setTab("impact")}>Impacto</TabBtn>
-        </div>
-
-        {/* Contenido */}
-        <div className="mt-4">
-          {tab === "pubs" && (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
-              {data.publicaciones.map((p) => (
-                <div key={p.id} className="rounded-xl border border-neutral-800 overflow-hidden">
-                  <div className="aspect-square bg-neutral-900">
-                    {p.foto_principal ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.foto_principal} alt={p.titulo} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center opacity-60">Sin foto</div>
-                    )}
+            {/* Avatar y Nombre */}
+            <div className="flex items-center gap-4 flex-1">
+               <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden border-4 border-white dark:border-[#112117] shadow-md">
+                  {data.usuario.foto ? (
+                    <img src={data.usuario.foto} alt="avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-3xl text-gray-400">👤</div>
+                  )}
+               </div>
+               <div>
+                  <h2 className="text-2xl font-bold tracking-tight">{nombre}</h2>
+                  {/* Estrellas */}
+                  <div className="flex items-center gap-2 text-sm mt-1">
+                     <div className="flex text-amber-400">
+                        <Stars rating={rating} />
+                     </div>
+                     <span className="text-gray-500 dark:text-gray-400 font-medium">
+                        {rating.toFixed(1)} ({data.usuario.total_resenias} reseñas)
+                     </span>
                   </div>
-                  <div className="p-3">
-                    <p className="font-medium">{p.titulo}</p>
-                    <p className="text-sm text-emerald-400 font-semibold">{p.valor_creditos} créditos</p>
-                    <p className="text-xs text-neutral-400 mt-1">{p.categoria} • {p.estado_nombre}</p>
+                  {data.usuario.acerca_de && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{data.usuario.acerca_de}</p>
+                  )}
+               </div>
+            </div>
+
+            {/* Botones Acción */}
+            <div className="flex gap-3 mt-2 md:mt-0">
+               <Link to="/settings" className="h-10 px-4 flex items-center justify-center rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-white/5 text-sm font-medium transition-colors">
+                  Configuración
+               </Link>
+               <Link to="/perfil/reportes" className="h-10 px-4 flex items-center justify-center rounded-xl bg-[#2ecc71] hover:bg-[#27ae60] text-white text-sm font-bold shadow-lg shadow-green-500/20 transition-colors">
+                  Ver Reportes
+               </Link>
+            </div>
+         </div>
+
+         {/* KPIs Cards (Estilo Mockup) */}
+         <div className="max-w-6xl mx-auto mt-8 grid grid-cols-3 gap-3 md:gap-6">
+            <KPICard value={saldo.toLocaleString()} label="Créditos Verdes" icon="eco" color="text-[#2ecc71]" />
+            <KPICard value={trueques.toString()} label="Trueques" icon="swap_horiz" />
+            <KPICard value={`${co2} kg`} label="CO₂ Ahorrado" icon="co2" />
+         </div>
+      </div>
+
+      {/* --- CONTENIDO PESTAÑAS --- */}
+      <div className="max-w-6xl mx-auto px-4 mt-6">
+         
+         {/* Navegación Tabs */}
+         <div className="flex border-b border-gray-200 dark:border-gray-800 mb-6 overflow-x-auto">
+            <TabButton active={tab === "pubs"} onClick={() => setTab("pubs")} label="Mis Publicaciones" />
+            <TabButton active={tab === "movs"} onClick={() => setTab("movs")} label="Historial" />
+            <TabButton active={tab === "impact"} onClick={() => setTab("impact")} label="Impacto" />
+            <TabButton active={tab === "reviews"} onClick={() => setTab("reviews")} label="Reseñas" />
+         </div>
+
+         {/* Tab: PUBLICACIONES */}
+         {tab === "pubs" && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+               {data.publicaciones.map((p) => (
+                  <div key={p.id} className="group bg-white dark:bg-[#1a2e22] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-all">
+                     <div className="aspect-square bg-gray-100 dark:bg-black/20 relative">
+                        {p.foto_principal ? (
+                           <img src={p.foto_principal} className="w-full h-full object-cover" />
+                        ) : (
+                           <div className="w-full h-full flex items-center justify-center text-gray-400">📷</div>
+                        )}
+                        <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">
+                           {p.estado_nombre}
+                        </div>
+                     </div>
+                     <div className="p-3">
+                        <h3 className="font-medium truncate text-gray-900 dark:text-gray-100">{p.titulo}</h3>
+                        <p className="text-[#2ecc71] font-bold text-sm mt-1">{p.valor_creditos} créditos</p>
+                     </div>
                   </div>
-                </div>
-              ))}
-              {!data.publicaciones.length && (
-                <p className="opacity-70">Aún no tienes publicaciones.</p>
-              )}
+               ))}
+               {!data.publicaciones.length && <EmptyState msg="No tienes publicaciones activas." />}
             </div>
-          )}
+         )}
 
-          {tab === "movs" && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="text-left text-neutral-300">
-                  <tr>
-                    <th className="px-2 py-2">Fecha</th>
-                    <th className="px-2 py-2">Tipo</th>
-                    <th className="px-2 py-2">Monto</th>
-                    <th className="px-2 py-2">Saldo</th>
-                    <th className="px-2 py-2">Descripción</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.movimientos.map(m => (
-                    <tr key={m.id} className="border-t border-neutral-800">
-                      <td className="px-2 py-2">{new Date(m.fecha_movimiento).toLocaleString()}</td>
-                      <td className="px-2 py-2">{m.tipo_codigo}</td>
-                      <td className={`px-2 py-2 ${m.monto_con_signo < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {m.monto_con_signo < 0 ? '-' : '+'}{Math.abs(m.monto_con_signo)}
-                      </td>
-                      <td className="px-2 py-2">{m.saldo_posterior}</td>
-                      <td className="px-2 py-2">{m.descripcion ?? '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {!data.movimientos.length && <p className="opacity-70 mt-3">Sin movimientos.</p>}
+         {/* Tab: MOVIMIENTOS */}
+         {tab === "movs" && (
+            <div className="bg-white dark:bg-[#1a2e22] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+               <table className="w-full text-sm text-left">
+                  <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 uppercase text-xs">
+                     <tr>
+                        <th className="px-4 py-3">Fecha</th>
+                        <th className="px-4 py-3">Tipo</th>
+                        <th className="px-4 py-3 text-right">Monto</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                     {data.movimientos.map(m => (
+                        <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                           <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{new Date(m.fecha_movimiento).toLocaleDateString()}</td>
+                           <td className="px-4 py-3">
+                              <p className="font-medium text-gray-900 dark:text-gray-200">{m.tipo_codigo}</p>
+                              <p className="text-xs text-gray-500">{m.descripcion}</p>
+                           </td>
+                           <td className={`px-4 py-3 text-right font-bold ${m.monto_con_signo < 0 ? 'text-red-500' : 'text-[#2ecc71]'}`}>
+                              {m.monto_con_signo > 0 ? '+' : ''}{m.monto_con_signo}
+                           </td>
+                        </tr>
+                     ))}
+                  </tbody>
+               </table>
+               {!data.movimientos.length && <div className="p-8 text-center text-gray-500">Sin movimientos recientes</div>}
             </div>
-          )}
+         )}
 
-          {tab === "impact" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <KPI label="Créditos Ganados" value={Number(data.impacto?.total_creditos_ganados ?? 0).toString()} icon="🏆" />
-              <KPI label="CO₂ Evitado" value={`${Number(data.impacto?.total_co2_evitado ?? 0)} kg`} icon="♻️" />
-              <KPI label="Energía Ahorrada" value={`${Number(data.impacto?.total_energia_ahorrada ?? 0)} kWh`} icon="⚡" />
-              <KPI label="Agua Preservada" value={`${Number(data.impacto?.total_agua_preservada ?? 0)} L`} icon="💧" />
+         {/* Tab: IMPACTO */}
+         {tab === "impact" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+               <ImpactCard label="Residuos Evitados" value={Number(data.impacto?.total_residuos_evitados?? 0).toString()} icon="🗑️" />
+               <ImpactCard label="CO₂ Evitado" value={`${Number(data.impacto?.total_co2_evitado ?? 0)} kg`} icon="♻️" />
+               <ImpactCard label="Energía Ahorrada" value={`${Number(data.impacto?.total_energia_ahorrada ?? 0)} kWh`} icon="⚡" />
+               <ImpactCard label="Agua Preservada" value={`${Number(data.impacto?.total_agua_preservada ?? 0)} L`} icon="💧" />
             </div>
-          )}
-        </div>
+         )}
+
+         {/* Tab: RESEÑAS (NUEVO) */}
+         {tab === "reviews" && (
+            <div className="space-y-4">
+               {data.reviews && data.reviews.length > 0 ? (
+                  data.reviews.map(r => (
+                     <div key={r.id} className="bg-white dark:bg-[#1a2e22] p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                        <div className="flex justify-between items-start mb-2">
+                           <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-500">
+                                 {r.autor_nombre?.charAt(0)}
+                              </div>
+                              <div>
+                                 <p className="font-bold text-gray-900 dark:text-gray-100 text-sm">{r.autor_nombre}</p>
+                                 <p className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString()}</p>
+                              </div>
+                           </div>
+                           <div className="flex text-amber-400 text-sm">
+                              <Stars rating={r.calificacion} />
+                           </div>
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-300 text-sm pl-[52px]">
+                           "{r.comentario}"
+                        </p>
+                     </div>
+                  ))
+               ) : (
+                  <EmptyState msg="Aún no has recibido reseñas." />
+               )}
+            </div>
+         )}
+
       </div>
     </div>
   );
 }
 
-function KPI({ label, value, icon, highlight }: { label: string; value: string; icon: string; highlight?: boolean }) {
-  return (
-    <div className={`rounded-xl border p-4 text-center ${highlight ? 'border-emerald-700' : 'border-neutral-800'}`}>
-      <p className={`text-3xl font-bold ${highlight ? 'text-emerald-400' : ''}`}>{value}</p>
-      <div className="text-sm opacity-80 mt-1 flex items-center justify-center gap-2">{icon}<span>{label}</span></div>
-    </div>
-  );
+// --- SUBCOMPONENTES ---
+
+function KPICard({ value, label, icon, color }: { value: string; label: string; icon: string; color?: string }) {
+   return (
+      <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white dark:bg-[#1a2e22] border border-gray-200 dark:border-gray-700 shadow-sm">
+         <p className={`text-3xl font-bold ${color || 'text-gray-900 dark:text-white'}`}>{value}</p>
+         <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">
+            <span className="material-symbols-outlined text-lg">{icon}</span>
+            {label}
+         </div>
+      </div>
+   );
 }
 
-function TabBtn({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: ()=>void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={
-        "flex-1 py-3 text-sm font-semibold border-b-2 " +
-        (active ? "border-emerald-500 text-emerald-400" : "border-transparent text-neutral-400 hover:text-neutral-200")
-      }
-    >
-      {children}
-    </button>
-  );
+function TabButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+   return (
+      <button
+         onClick={onClick}
+         className={`flex-1 pb-4 pt-2 text-sm font-bold border-b-[3px] transition-colors whitespace-nowrap px-4 ${
+            active 
+            ? "border-[#2ecc71] text-[#2ecc71]" 
+            : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+         }`}
+      >
+         {label}
+      </button>
+   );
+}
+
+function ImpactCard({ label, value, icon }: any) {
+   return (
+      <div className="bg-white dark:bg-[#1a2e22] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 flex items-center gap-4">
+         <div className="text-3xl">{icon}</div>
+         <div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">{label}</p>
+         </div>
+      </div>
+   )
+}
+
+function Stars({ rating }: { rating: number }) {
+   return (
+     <div className="flex">
+       {[1, 2, 3, 4, 5].map((star) => (
+         <svg key={star} className={`w-4 h-4 ${star <= Math.round(rating) ? "fill-current" : "text-gray-300 dark:text-gray-600 fill-current"}`} viewBox="0 0 20 20">
+           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+         </svg>
+       ))}
+     </div>
+   );
+ }
+
+function EmptyState({ msg }: { msg: string }) {
+   return (
+      <div className="col-span-full py-12 flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
+         <div className="text-4xl mb-2 opacity-50">📭</div>
+         <p className="text-gray-500">{msg}</p>
+      </div>
+   )
 }

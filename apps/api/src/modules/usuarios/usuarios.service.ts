@@ -198,29 +198,46 @@ export async function getPanel(
   movsOffset = 0
 ) {
   return withTx(async (client) => {
+    // ... (tus consultas existentes de base, metricas, impacto, pubs) ...
     const base = await client.query(SQL.panelUsuarioBase, [usuarioId]);
     if (!base.rowCount) throw new Error('Usuario no encontrado');
-
     const metricas = await client.query(SQL.panelMetricas, [usuarioId]);
     const impacto  = await client.query(SQL.panelImpacto,  [usuarioId]);
     const pubs     = await client.query(SQL.panelPublicaciones, [usuarioId, pubsLimit, pubsOffset]);
 
+    // ... (tu lógica de movimientos existente) ...
     let movimientos: any[] = [];
     const billeteraId = base.rows[0].billetera_id;
     if (billeteraId) {
-      const mov = await client.query(SQL.panelMovimientos, [billeteraId, movsLimit, movsOffset]);
-      movimientos = mov.rows.map((r: any) => ({
-        ...r,
-        monto_con_signo: r.es_debito ? -Number(r.monto) : Number(r.monto),
-      }));
+       // ... (tu código de movimientos)
+       const mov = await client.query(SQL.panelMovimientos, [billeteraId, movsLimit, movsOffset]);
+       movimientos = mov.rows.map((r: any) => ({
+         ...r,
+         monto_con_signo: r.es_debito ? -Number(r.monto) : Number(r.monto),
+       }));
     }
 
+    // 👇 NUEVO: Obtener reseñas recibidas
+    const reviews = await client.query(SQL.getMisResenias, [usuarioId]);
+
+    // 👇 AQUI AGREGA LA REPUTACIÓN DE 'reputacion_user' SI NO ESTABA
+    // (Asumiendo que 'panelUsuarioBase' ya no trae reputación, la buscamos aparte o la unimos)
+    // Si tu tabla 'reputacion_user' tiene el ID del usuario, puedes hacer un join en 'panelUsuarioBase'
+    // O hacer una query simple aquí:
+    const reputacionRes = await client.query(`SELECT calificacion_prom, total_resenias FROM reputacion_user WHERE usuario_id = $1`, [usuarioId]);
+    const reputacion = reputacionRes.rows[0] || { calificacion_prom: 0, total_resenias: 0 };
+
     const b = base.rows[0];
+    
     return {
       usuario: {
+        // ... (tus datos de usuario)
         id: b.id, email: b.email, estado: b.estado, rol_id: b.rol_id, rol_nombre: b.rol_nombre,
         full_name: b.full_name, acerca_de: b.acerca_de, foto: b.foto,
         ultimo_login: b.ultimo_login, created_at: b.created_at,
+        // 👇 Agregamos reputación al objeto usuario
+        calificacion_prom: Number(reputacion.calificacion_prom),
+        total_resenias: Number(reputacion.total_resenias),
       },
       billetera: {
         id: b.billetera_id,
@@ -231,6 +248,40 @@ export async function getPanel(
       impacto: impacto.rows[0] ?? null,
       publicaciones: pubs.rows,
       movimientos,
+      reviews: reviews.rows, // 👈 Retornamos las reseñas
     };
   });
 }
+
+export async function getDirecciones(usuarioId: number) {
+  const r = await pool.query(SQL.listarDirecciones, [usuarioId]);
+  return r.rows;
+}
+
+export async function addDireccion(usuarioId: number, data: {
+  descripcion: string; calle_y_num: string; provincia: string; ciudad: string; es_principal: boolean;
+}) {
+  return withTx(async (client) => {
+    // Si es principal, quitamos la marca a las demás
+    if (data.es_principal) {
+      await client.query(SQL.quitarPrincipal, [usuarioId]);
+    }
+    
+    // Si es la primera dirección, forzamos que sea principal
+    const count = await client.query(`SELECT COUNT(*) FROM direcciones WHERE usuario_id=$1`, [usuarioId]);
+    const esPrimera = Number(count.rows[0].count) === 0;
+    const finalPrincipal = data.es_principal || esPrimera;
+
+    const r = await client.query(SQL.crearDireccion, [
+      data.descripcion, data.calle_y_num, data.provincia, data.ciudad, finalPrincipal, usuarioId
+    ]);
+    return r.rows[0];
+  });
+}
+
+export async function deleteDireccion(usuarioId: number, direccionId: number) {
+  const r = await pool.query(SQL.borrarDireccion, [direccionId, usuarioId]);
+  if (!r.rowCount) throw new Error("Dirección no encontrada o no te pertenece");
+  return { id: direccionId };
+}
+

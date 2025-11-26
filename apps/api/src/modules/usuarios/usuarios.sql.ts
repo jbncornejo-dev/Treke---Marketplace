@@ -127,8 +127,7 @@ export const SQL = {
     total_co2_evitado,
     total_energia_ahorrada,
     total_agua_preservada,
-    total_residuos_evitados,
-    total_creditos_ganados
+    total_residuos_evitados
   FROM impacto_usuario
   WHERE usuario_id = $1;
 `,
@@ -173,5 +172,50 @@ export const SQL = {
     ORDER BY m.fecha_movimiento DESC, m.id DESC
     LIMIT $2 OFFSET $3
   `,
+
+  getMisResenias: `
+    SELECT 
+      r.id, 
+      r.calificacion, 
+      r.comentario, 
+      r.created_at,
+      p.full_name as autor_nombre,
+      p.foto as autor_foto
+    FROM resenia r
+    JOIN perfil_usuario p ON p.usuario_id = r.autor_id
+    WHERE r.destinatario_id = $1 
+      AND r.deleted_at IS NULL 
+      AND r.es_visible = true
+    ORDER BY r.created_at DESC
+    LIMIT 10
+  `,
+
+  // --- DIRECCIONES ---
+  listarDirecciones: `
+    SELECT id, descripcion, calle_y_num, provincia, ciudad, es_principal 
+    FROM direcciones 
+    WHERE usuario_id = $1 
+    ORDER BY es_principal DESC, created_at DESC
+  `,
+
+  crearDireccion: `
+    INSERT INTO direcciones (descripcion, calle_y_num, provincia, ciudad, es_principal, usuario_id)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING *;
+  `,
+
+  borrarDireccion: `
+    DELETE FROM direcciones WHERE id = $1 AND usuario_id = $2 RETURNING id;
+  `,
+
+  quitarPrincipal: `
+    UPDATE direcciones SET es_principal = false WHERE usuario_id = $1;
+  `,
+  
+  hacerPrincipal: `
+    UPDATE direcciones SET es_principal = true WHERE id = $1 AND usuario_id = $2 RETURNING id;
+  `
+
+  
 };
 

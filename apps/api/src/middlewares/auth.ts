@@ -103,3 +103,30 @@ export function selfOrAdmin(
     .status(403)
     .json({ ok: false, error: "No tienes permiso para esta acción" });
 }
+
+// Middleware: Intenta autenticar, pero si falla no bloquea (para rutas públicas personalizadas)
+export function optionalAuthMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const authHeader = req.headers.authorization;
+
+  // Si no hay header o no es Bearer, seguimos como invitado (sin req.user)
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return next();
+  }
+
+  const token = authHeader.substring("Bearer ".length);
+
+  try {
+    // Intentamos verificar. Si es válido, inyectamos el usuario.
+    const payload = jwt.verify(token, JWT_SECRET) as JwtUser;
+    req.user = payload;
+  } catch (e) {
+    // Si el token expiró o es inválido, simplemente lo ignoramos y seguimos como invitado.
+    // No devolvemos error 401.
+  }
+  
+  return next();
+}

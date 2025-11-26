@@ -1,6 +1,15 @@
 // apps/web/src/api/profile.ts
 import { api } from "./client";
 
+export type ReviewItem = {
+  id: number;
+  calificacion: number;
+  comentario: string;
+  created_at: string;
+  autor_nombre: string;
+  autor_foto?: string;
+};
+
 export type PanelResponse = {
   usuario: {
     id: number;
@@ -10,6 +19,8 @@ export type PanelResponse = {
     rol_nombre?: string;
     full_name?: string;
     acerca_de?: string;
+    calificacion_prom?: number; // Nuevo
+    total_resenias?: number;    // Nuevo
     foto?: string;
     ultimo_login?: string;
     created_at: string;
@@ -25,7 +36,6 @@ export type PanelResponse = {
     total_energia_ahorrada: string | number;
     total_agua_preservada: string | number;
     total_residuos_evitados: string | number;
-    total_creditos_ganados: string | number;
   };
   publicaciones: Array<{
     id: number;
@@ -51,7 +61,10 @@ export type PanelResponse = {
     tipo_referencia?: string | null;
     referencia_id?: number | null;
   }>;
+
+  reviews: ReviewItem[]; // Nuevo
 };
+
 
 export function getCurrentUserId(): number | null {
   try {
