@@ -111,3 +111,41 @@ export async function rechazarPropuesta(params: { propuestaId: number; actorId: 
     return res.rows[0];
   });
 }
+
+// --- SERVICIOS DE MENSAJERÍA ---
+
+export async function listarMensajes(propuestaId: number, userId: number) {
+  return withTx(async (client) => {
+    // Validar acceso (opcional pero recomendado)
+    const partQ = await client.query(IntercambiosSQL.getParticipantesPropuesta, [propuestaId]);
+    if (!partQ.rowCount) throw new Error("Propuesta no encontrada");
+    const { demandante_id, vendedor_id } = partQ.rows[0];
+
+    if (userId !== demandante_id && userId !== vendedor_id) {
+        throw new Error("No tienes permiso para ver estos mensajes");
+    }
+
+    const res = await client.query(IntercambiosSQL.listarMensajes, [propuestaId]);
+    return res.rows;
+  });
+}
+
+export async function enviarMensaje(propuestaId: number, remitenteId: number, contenido: string) {
+  return withTx(async (client) => {
+    // 1. Identificar destinatario
+    const partQ = await client.query(IntercambiosSQL.getParticipantesPropuesta, [propuestaId]);
+    if (!partQ.rowCount) throw new Error("Propuesta no encontrada");
+    const { demandante_id, vendedor_id } = partQ.rows[0];
+
+    let destinatarioId: number;
+    if (remitenteId === demandante_id) destinatarioId = vendedor_id;
+    else if (remitenteId === vendedor_id) destinatarioId = demandante_id;
+    else throw new Error("No participas en esta propuesta");
+
+    // 2. Insertar
+    const res = await client.query(IntercambiosSQL.crearMensaje, [
+      propuestaId, remitenteId, destinatarioId, contenido
+    ]);
+    return res.rows[0];
+  });
+}

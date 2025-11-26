@@ -25,4 +25,8 @@ r.post("/intercambios/:id/cancelar", authMiddleware, C.cancelar);
 // ==========================================
 r.get("/usuarios/:id/intercambios", authMiddleware, selfOrAdmin, C.resumenUsuario);
 
+// Agrega esto en tu archivo de rutas
+r.get("/intercambios/propuestas/:id/mensajes", authMiddleware, C.listarMensajes);
+r.post("/intercambios/propuestas/:id/mensajes", authMiddleware, C.enviarMensaje);
+
 export default r;

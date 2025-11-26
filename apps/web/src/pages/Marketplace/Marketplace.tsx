@@ -88,6 +88,19 @@ export default function Marketplace() {
             />
           </div>
 
+          {/* ✨ NUEVO BOTÓN: Mis Intercambios ✨ */}
+          <Link 
+            to="/intercambios" 
+            className="flex items-center justify-center h-12 w-12 rounded-xl bg-white dark:bg-[#1a2e22] border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#253f30] text-gray-600 dark:text-gray-300 transition-colors shadow-sm relative"
+            title="Mis Intercambios"
+          >
+             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+             </svg>
+             {/* Badge opcional si quisieras mostrar notificaciones en el futuro */}
+             {/* <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#1a2e22]"></span> */}
+          </Link>
+
           {/* Botón Perfil */}
           <Link 
             to="/perfil" 

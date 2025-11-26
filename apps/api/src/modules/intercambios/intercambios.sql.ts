@@ -116,12 +116,39 @@ export const IntercambiosSQL = {
       i.*,
       pub.titulo,
       pub.valor_creditos AS valor_original_pub,
-      pub.id AS publicacion_id
+      pub.id AS publicacion_id,
+      p.id AS propuesta_aceptada_id
     FROM intercambios i
     JOIN propuesta p ON p.id = i.propuesta_aceptada_id
     JOIN publicaciones pub ON pub.id = p.publicacion_id
     WHERE i.comprador_id = $1 OR i.vendedor_id = $1
     ORDER BY i.fecha_de_aceptacion DESC, i.id DESC
     LIMIT $2 OFFSET $3;
+  `,
+
+  // --- MENSAJERÍA ---
+  listarMensajes: `
+    SELECT 
+      m.id, 
+      m.contenido, 
+      m.fecha_envio, 
+      m.remitente_id, 
+      m.es_leido,
+      p.full_name as remitente_nombre
+    FROM mensajes m
+    JOIN perfil_usuario p ON p.usuario_id = m.remitente_id
+    WHERE m.propuesta_id = $1
+    ORDER BY m.fecha_envio ASC
+  `,
+
+  crearMensaje: `
+    INSERT INTO mensajes (propuesta_id, remitente_id, destinatario_id, contenido)
+    VALUES ($1, $2, $3, $4)
+    RETURNING id, fecha_envio;
+  `,
+
+  getParticipantesPropuesta: `
+    SELECT demandante_id, (SELECT usuario_id FROM publicaciones WHERE id = publicacion_id) as vendedor_id
+    FROM propuesta WHERE id = $1
   `
 };

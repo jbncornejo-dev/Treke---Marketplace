@@ -95,4 +95,33 @@ export const IntercambiosController = {
       res.status(400).json({ ok: false, error: e.message });
     }
   },
+
+  // MENSAJES
+  listarMensajes: async (req: Request, res: Response) => {
+    try {
+      // Ojo: usamos propuestaId porque los mensajes están ligados a la propuesta
+      const propuestaId = num(req.params.id); 
+      const userId = req.user?.id;
+      if (!propuestaId || !userId) throw new Error("Datos incompletos");
+
+      const data = await svc.listarMensajes(propuestaId, userId);
+      res.json({ ok: true, data });
+    } catch (e: any) {
+      res.status(400).json({ ok: false, error: e.message });
+    }
+  },
+
+  enviarMensaje: async (req: Request, res: Response) => {
+    try {
+      const propuestaId = num(req.params.id);
+      const userId = req.user?.id;
+      const { contenido } = req.body;
+      if (!propuestaId || !userId || !contenido) throw new Error("Datos incompletos");
+
+      const data = await svc.enviarMensaje(propuestaId, userId, contenido);
+      res.json({ ok: true, data });
+    } catch (e: any) {
+      res.status(400).json({ ok: false, error: e.message });
+    }
+  },
 };

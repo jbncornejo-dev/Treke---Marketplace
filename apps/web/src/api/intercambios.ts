@@ -19,6 +19,15 @@ export type PropuestaResumen = {
   puede_responder: boolean;
 };
 
+export type Mensaje = {
+  id: number;
+  contenido: string;
+  fecha_envio: string;
+  remitente_id: number;
+  remitente_nombre: string;
+  es_leido: boolean;
+};
+
 export type IntercambioResumen = {
   id: number;
   monto_credito: number;
@@ -36,6 +45,7 @@ export type IntercambioResumen = {
   valor_original_pub: number; 
   
   publicacion_id: number;
+  propuesta_aceptada_id: number;
 };
 
 export type MisIntercambiosResponse = {
@@ -130,3 +140,24 @@ export async function rechazarPropuesta(
   return (resp as any).data ?? resp;
 }
 
+// NUEVAS FUNCIONES DE MENSAJERÍA
+export async function getMensajes(propuestaId: number) {
+  const uid = getCurrentUserId();
+  if (!uid) throw new Error("Debes iniciar sesión");
+
+  const resp = await api.get<{ ok: boolean; data: Mensaje[] }>(
+    `/api/intercambios/propuestas/${propuestaId}/mensajes`
+  );
+  return (resp as any).data ?? [];
+}
+
+export async function enviarMensaje(propuestaId: number, contenido: string) {
+  const uid = getCurrentUserId();
+  if (!uid) throw new Error("Debes iniciar sesión");
+
+  const resp = await api.post<{ ok: boolean; data: any }>(
+    `/api/intercambios/propuestas/${propuestaId}/mensajes`,
+    { contenido }
+  );
+  return (resp as any).data ?? resp;
+}
