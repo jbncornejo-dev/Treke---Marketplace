@@ -227,6 +227,8 @@ export async function getPanel(
     const reputacionRes = await client.query(`SELECT calificacion_prom, total_resenias FROM reputacion_user WHERE usuario_id = $1`, [usuarioId]);
     const reputacion = reputacionRes.rows[0] || { calificacion_prom: 0, total_resenias: 0 };
 
+    const favs = await client.query(SQL.getMisFavoritos, [usuarioId]);
+
     const b = base.rows[0];
     
     return {
@@ -248,7 +250,8 @@ export async function getPanel(
       impacto: impacto.rows[0] ?? null,
       publicaciones: pubs.rows,
       movimientos,
-      reviews: reviews.rows, // 👈 Retornamos las reseñas
+      reviews: reviews.rows,
+      favoritos: favs.rows, 
     };
   });
 }

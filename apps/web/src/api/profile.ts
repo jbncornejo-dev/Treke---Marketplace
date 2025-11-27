@@ -47,6 +47,17 @@ export type PanelResponse = {
     estado_nombre: string;
     foto_principal?: string | null;
   }>;
+
+  // 👇 NUEVO CAMPO
+  favoritos: Array<{
+    id: number;
+    titulo: string;
+    valor_creditos: number;
+    categoria: string;
+    estado_nombre: string;
+    foto_principal?: string | null;
+  }>;
+
   movimientos: Array<{
     id: number;
     fecha_movimiento: string;

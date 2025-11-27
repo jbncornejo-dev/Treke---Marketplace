@@ -1,9 +1,9 @@
-// apps/web/src/pages/Profile/Profile.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchPanel, getCurrentUserId, type PanelResponse } from "../../api/profile";
 
-type Tab = "pubs" | "movs" | "impact" | "reviews";
+// 👇 Agregamos 'favs' al tipo Tab
+type Tab = "pubs" | "movs" | "impact" | "reviews" | "favs";
 
 export default function Profile() {
   const [data, setData] = useState<PanelResponse | null>(null);
@@ -54,7 +54,6 @@ export default function Profile() {
       <div className="bg-white dark:bg-[#1a2e22] border-b border-gray-200 dark:border-gray-800 pt-6 pb-4 px-4">
          <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center gap-6">
             
-            {/* Avatar y Nombre */}
             <div className="flex items-center gap-4 flex-1">
                <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden border-4 border-white dark:border-[#112117] shadow-md">
                   {data.usuario.foto ? (
@@ -65,33 +64,20 @@ export default function Profile() {
                </div>
                <div>
                   <h2 className="text-2xl font-bold tracking-tight">{nombre}</h2>
-                  {/* Estrellas */}
                   <div className="flex items-center gap-2 text-sm mt-1">
-                     <div className="flex text-amber-400">
-                        <Stars rating={rating} />
-                     </div>
-                     <span className="text-gray-500 dark:text-gray-400 font-medium">
-                        {rating.toFixed(1)} ({data.usuario.total_resenias} reseñas)
-                     </span>
+                     <div className="flex text-amber-400"><Stars rating={rating} /></div>
+                     <span className="text-gray-500 dark:text-gray-400 font-medium">{rating.toFixed(1)} ({data.usuario.total_resenias} reseñas)</span>
                   </div>
-                  {data.usuario.acerca_de && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{data.usuario.acerca_de}</p>
-                  )}
+                  {data.usuario.acerca_de && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{data.usuario.acerca_de}</p>}
                </div>
             </div>
 
-            {/* Botones Acción */}
             <div className="flex gap-3 mt-2 md:mt-0">
-               <Link to="/settings" className="h-10 px-4 flex items-center justify-center rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-white/5 text-sm font-medium transition-colors">
-                  Configuración
-               </Link>
-               <Link to="/perfil/reportes" className="h-10 px-4 flex items-center justify-center rounded-xl bg-[#2ecc71] hover:bg-[#27ae60] text-white text-sm font-bold shadow-lg shadow-green-500/20 transition-colors">
-                  Ver Reportes
-               </Link>
+               <Link to="/settings" className="h-10 px-4 flex items-center justify-center rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-white/5 text-sm font-medium transition-colors">Configuración</Link>
+               <Link to="/perfil/reportes" className="h-10 px-4 flex items-center justify-center rounded-xl bg-[#2ecc71] hover:bg-[#27ae60] text-white text-sm font-bold shadow-lg shadow-green-500/20 transition-colors">Ver Reportes</Link>
             </div>
          </div>
 
-         {/* KPIs Cards (Estilo Mockup) */}
          <div className="max-w-6xl mx-auto mt-8 grid grid-cols-3 gap-3 md:gap-6">
             <KPICard value={saldo.toLocaleString()} label="Créditos Verdes" icon="eco" color="text-[#2ecc71]" />
             <KPICard value={trueques.toString()} label="Trueques" icon="swap_horiz" />
@@ -103,8 +89,9 @@ export default function Profile() {
       <div className="max-w-6xl mx-auto px-4 mt-6">
          
          {/* Navegación Tabs */}
-         <div className="flex border-b border-gray-200 dark:border-gray-800 mb-6 overflow-x-auto">
+         <div className="flex border-b border-gray-200 dark:border-gray-800 mb-6 overflow-x-auto no-scrollbar">
             <TabButton active={tab === "pubs"} onClick={() => setTab("pubs")} label="Mis Publicaciones" />
+            <TabButton active={tab === "favs"} onClick={() => setTab("favs")} label="Favoritos" /> {/* 👈 NUEVA TAB */}
             <TabButton active={tab === "movs"} onClick={() => setTab("movs")} label="Historial" />
             <TabButton active={tab === "impact"} onClick={() => setTab("impact")} label="Impacto" />
             <TabButton active={tab === "reviews"} onClick={() => setTab("reviews")} label="Reseñas" />
@@ -114,7 +101,7 @@ export default function Profile() {
          {tab === "pubs" && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                {data.publicaciones.map((p) => (
-                  <div key={p.id} className="group bg-white dark:bg-[#1a2e22] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-all">
+                  <Link to={`/market/${p.id}`} key={p.id} className="group bg-white dark:bg-[#1a2e22] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-all">
                      <div className="aspect-square bg-gray-100 dark:bg-black/20 relative">
                         {p.foto_principal ? (
                            <img src={p.foto_principal} className="w-full h-full object-cover" />
@@ -129,9 +116,36 @@ export default function Profile() {
                         <h3 className="font-medium truncate text-gray-900 dark:text-gray-100">{p.titulo}</h3>
                         <p className="text-[#2ecc71] font-bold text-sm mt-1">{p.valor_creditos} créditos</p>
                      </div>
-                  </div>
+                  </Link>
                ))}
                {!data.publicaciones.length && <EmptyState msg="No tienes publicaciones activas." />}
+            </div>
+         )}
+
+         {/* Tab: FAVORITOS (NUEVO) */}
+         {tab === "favs" && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+               {data.favoritos && data.favoritos.map((p) => (
+                  <Link to={`/market/${p.id}`} key={p.id} className="group bg-white dark:bg-[#1a2e22] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-all">
+                     <div className="aspect-square bg-gray-100 dark:bg-black/20 relative">
+                        {p.foto_principal ? (
+                           <img src={p.foto_principal} className="w-full h-full object-cover" />
+                        ) : (
+                           <div className="w-full h-full flex items-center justify-center text-gray-400">📷</div>
+                        )}
+                        {/* Corazón indicador */}
+                        <div className="absolute top-2 right-2 p-1.5 bg-white/80 dark:bg-black/50 rounded-full backdrop-blur-sm text-red-500">
+                           <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                        </div>
+                     </div>
+                     <div className="p-3">
+                        <h3 className="font-medium truncate text-gray-900 dark:text-gray-100">{p.titulo}</h3>
+                        <p className="text-[#2ecc71] font-bold text-sm mt-1">{p.valor_creditos} créditos</p>
+                        <p className="text-xs text-gray-500 mt-1">{p.categoria}</p>
+                     </div>
+                  </Link>
+               ))}
+               {(!data.favoritos || !data.favoritos.length) && <EmptyState msg="No has guardado favoritos aún." />}
             </div>
          )}
 
@@ -175,7 +189,7 @@ export default function Profile() {
             </div>
          )}
 
-         {/* Tab: RESEÑAS (NUEVO) */}
+         {/* Tab: RESEÑAS */}
          {tab === "reviews" && (
             <div className="space-y-4">
                {data.reviews && data.reviews.length > 0 ? (
@@ -195,9 +209,7 @@ export default function Profile() {
                               <Stars rating={r.calificacion} />
                            </div>
                         </div>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm pl-[52px]">
-                           "{r.comentario}"
-                        </p>
+                        <p className="text-gray-600 dark:text-gray-300 text-sm pl-[52px]">"{r.comentario}"</p>
                      </div>
                   ))
                ) : (
@@ -211,8 +223,7 @@ export default function Profile() {
   );
 }
 
-// --- SUBCOMPONENTES ---
-
+// --- SUBCOMPONENTES (Igual que antes) ---
 function KPICard({ value, label, icon, color }: { value: string; label: string; icon: string; color?: string }) {
    return (
       <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white dark:bg-[#1a2e22] border border-gray-200 dark:border-gray-700 shadow-sm">

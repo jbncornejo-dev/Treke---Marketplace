@@ -214,6 +214,29 @@ export const SQL = {
   
   hacerPrincipal: `
     UPDATE direcciones SET es_principal = true WHERE id = $1 AND usuario_id = $2 RETURNING id;
+  `,
+
+  getMisFavoritos: `
+    SELECT
+      pub.id, pub.titulo, pub.descripcion, pub.valor_creditos,
+      pub.created_at,
+      c.nombre  AS categoria,
+      e.nombre  AS estado_nombre,
+      (
+        SELECT f.foto_url
+        FROM fotos f
+        WHERE f.publicacion_id = pub.id
+        ORDER BY f.es_principal DESC, f.orden ASC, f.id ASC
+        LIMIT 1
+      ) AS foto_principal
+    FROM lista_favoritos lf
+    JOIN publicaciones pub    ON pub.id = lf.publicacion_id
+    JOIN categoria c          ON c.id = pub.categoria_id
+    JOIN estado_publicacion e ON e.id = pub.estado_id
+    WHERE lf.usuario_id = $1 
+      AND pub.deleted_at IS NULL
+    ORDER BY lf.created_at DESC
+    LIMIT 20
   `
 
   
