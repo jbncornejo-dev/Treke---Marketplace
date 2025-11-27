@@ -12,8 +12,10 @@ import MarketCreate from "./pages/Marketplace/MarketCreate";
 import ComprarPaquetes from "./pages/Creditos/ComprarPaquetes";
 import IntercambiosPage from "./pages/Intercambios/IntercambiosPage";
 import UserReportsPage from "./pages/reports/UserReportsPage";
-import OrgReportsPage from "./pages/reports/OrgReportsPage";
+
 import AdminReportsPage from "./pages/reports/AdminReportsPage";
+
+
 import SettingsPage from "./pages/profile/SettingsPage";
 
 // --- Componentes ---
@@ -67,8 +69,9 @@ export default function App() {
           <Route path="/creditosyplanes" element={<ComprarPaquetes />} />
 
           {/* Organización y Admin */}
-          <Route path="/org/reportes" element={<OrgReportsPage />} />
+          
           <Route path="/admin" element={<AdminUsers />} />
+           <Route path="/perfil/reportes" element={<UserReportsPage />} />
           <Route path="/admin/reportes" element={<AdminReportsPage />} />
 
           <Route path="/intercambios" element={<IntercambiosPage />} />

@@ -11,6 +11,12 @@ import type {
   RankingTopUsuario,
   UsuarioActivoPorRolRow,
   UserLastActivityRow,
+  RatioDemandaPorCategoria,
+  ParticipacionActividadSostenible,
+  PublicacionesPorMesRow,
+  CalidadPublicacionFotograficaRow,
+  OrgDashboard,
+   MonetizacionIngresosDia
 } from "../types/report";
 
 // Helper para saber si hay usuario logueado (solo para UX, ya no se manda por header)
@@ -71,6 +77,12 @@ export async function getUserRanking(): Promise<UserRankingData> {
 
 // (history lo dejamos para más adelante, backend devuelve 501)
 
+export async function getAdminIngresosPorDia(): Promise<MonetizacionIngresosDia[]> {
+  const r = await api.get<{ ok: boolean; data: MonetizacionIngresosDia[] }>(
+    "/api/admin/reportes/monetizacion-dia"
+  );
+  return (r as any).data ?? (r as any);
+}
 /* ============================
  *  REPORTES – ORG / EMPRENDEDOR
  * ============================*/
@@ -103,6 +115,23 @@ export async function getOrgTopCategorias(): Promise<IntercambiosPorCategoria[]>
   );
   return (r as any).data ?? (r as any);
 }
+
+// GET /api/report/org/me/dashboard
+// Dashboard completo de emprendedor (resumen + ventas + impacto + clientes)
+// GET /api/report/org/:usuarioId/dashboard
+// Dashboard completo de emprendedor (resumen + ventas + impacto + clientes)
+export async function getOrgDashboard(): Promise<OrgDashboard> {
+  const uid = getCurrentUserIdSafe();
+  if (!uid) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  const r = await api.get<{ ok: boolean; data: OrgDashboard }>(
+    `/api/report/org/${uid}/dashboard`
+  );
+  return (r as any).data ?? (r as any);
+}
+
 
 /* ============================
  *  REPORTES – ADMIN
@@ -155,3 +184,36 @@ export async function getAdminUsuariosInactivos30d(): Promise<UserLastActivityRo
   );
   return (r as any).data ?? (r as any);
 }
+
+// GET /api/report/admin/publicaciones-por-mes
+export async function getAdminPublicacionesPorMes(): Promise<PublicacionesPorMesRow[]> {
+  const r = await api.get<{ ok: boolean; data: PublicacionesPorMesRow[] }>(
+    "/api/report/admin/publicaciones-por-mes"
+  );
+  return (r as any).data ?? (r as any);
+}
+
+// GET /api/report/admin/ratio-demanda
+export async function getAdminRatioDemanda(): Promise<RatioDemandaPorCategoria[]> {
+  const r = await api.get<{ ok: boolean; data: RatioDemandaPorCategoria[] }>(
+    "/api/report/admin/ratio-demanda"
+  );
+  return (r as any).data ?? (r as any);
+}
+
+// GET /api/report/admin/calidad-fotos
+export async function getAdminCalidadPublicacionFotografica(): Promise<CalidadPublicacionFotograficaRow[]> {
+  const r = await api.get<{ ok: boolean; data: CalidadPublicacionFotograficaRow[] }>(
+    "/api/report/admin/calidad-fotos"
+  );
+  return (r as any).data ?? (r as any);
+}
+
+// GET /api/report/admin/participacion-actividades
+export async function getAdminParticipacionActividadesSostenibles(): Promise<ParticipacionActividadSostenible[]> {
+  const r = await api.get<{ ok: boolean; data: ParticipacionActividadSostenible[] }>(
+    "/api/report/admin/participacion-actividades"
+  );
+  return (r as any).data ?? (r as any);
+}
+
