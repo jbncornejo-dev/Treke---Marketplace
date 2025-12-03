@@ -13,8 +13,9 @@ import MarketCreate from "./pages/Marketplace/MarketCreate";
 import ComprarPaquetes from "./pages/Creditos/ComprarPaquetes";
 import IntercambiosPage from "./pages/Intercambios/IntercambiosPage";
 import UserReportsPage from "./pages/reports/UserReportsPage";
-import OrgReportsPage from "./pages/reports/OrgReportsPage";
 import AdminReportsPage from "./pages/reports/AdminReportsPage";
+
+
 import SettingsPage from "./pages/profile/SettingsPage";
 
 
@@ -107,12 +108,6 @@ export default function App() {
             </PrivateRoute>
           } />
 
-          <Route path="/org/reportes" element={
-            <PrivateRoute>
-              <OrgReportsPage />
-            </PrivateRoute>
-          } />
-
 
           {/* --- RUTAS DE ADMIN (Protegidas Nivel Alto) --- */}
           {/* Aquí aplicamos la lógica que pediste: Evitar que entren por URL */}
@@ -128,6 +123,7 @@ export default function App() {
               <AdminReportsPage />
             </AdminRoute>
           } />
+
 
         </Routes>
       </div>

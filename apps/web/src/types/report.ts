@@ -129,18 +129,118 @@ export interface ParticipacionActividadSostenible {
   tipo_actividad: string;
 }
 
+// 📆 vista_publicaciones_por_mes
+export interface PublicacionesPorMesRow {
+  anio: number;
+  mes_num: number;
+  mes_nombre: string;
+  total_publicaciones: number;
+}
+
+// 🖼️ vw_calidad_de_publicacion_fotografica
+export interface CalidadPublicacionFotograficaRow {
+  categoria: string;
+  total_publicaciones_activas: number;
+  publicaciones_sin_foto: number;
+  porcentaje_sin_foto: number;
+}
+
 // 🧮 Dashboard global de admin (S.getAdminDashboard)
 export interface AdminDashboard {
   ingresos_total: MonetizacionIngresosTotal | null;
+   ingresos_por_dia?: MonetizacionIngresosDia[];
   ingresos_por_mes: MonetizacionIngresosMes[];
   impacto_total: ImpactoAmbientalTotal | null;
   adopcion_suscripcion: AdopcionSuscripcion | null;
   total_intercambios: TotalIntercambios | null;
   consumo_vs_generacion: ConsumoVsGeneracion[];
 }
+
 export interface UsuarioActivoPorRolRow {
   usuario_id: number;
   email: string;
   rol: string;
   ultima_actividad: string; // ISO
+}
+// apps/web/src/types/report.ts
+
+// ============================================
+// EMPRENDEDOR / ORG
+// ============================================
+
+export interface EmprendedorResumenRow {
+  usuario_id: number;
+  email: string;
+  full_name: string | null;
+  rol: string;
+  publicaciones_activas: number;
+  publicaciones_intercambiadas: number;
+  intercambios_como_vendedor: number;
+  creditos_ganados_por_ventas: number;
+  calificacion_prom: number | string | null;
+  total_resenias: number;
+  total_co2_evitado: string | number;
+  total_energia_ahorrada: string | number;
+  total_agua_preservada: string | number;
+  total_residuos_evitados: string | number;
+}
+
+export interface EmprendedorIngresoMensualRow {
+  periodo: string; // "2025-01", etc.
+  creditos_ganados: string | number;
+}
+
+export interface EmprendedorIngresoCategoriaRow {
+  categoria_id: number;
+  categoria: string;
+  intercambios_completados: number;
+  creditos_ganados_categoria: string | number;
+}
+
+export interface EmprendedorPublicacionDetalleRow {
+  publicacion_id: number;
+  titulo: string;
+  estado_publicacion: string;
+  valor_creditos: number;
+  created_at: string;
+  updated_at: string | null;
+  intercambios_completados: number;
+  ultima_venta: string | null;
+  creditos_ganados_publicacion: string | number;
+}
+
+export interface EmprendedorImpactoCategoriaRow {
+  categoria_id: number;
+  categoria: string;
+  factor_id: number;
+  nombre_factor: string;
+  unidad_medida: string;
+  impacto_total: string | number;
+}
+
+export interface EmprendedorClienteRecurrenteRow {
+  cliente_id: number;
+  cliente_email: string;
+  intercambios_completados: number;
+}
+
+/**
+ * Dashboard completo de emprendedor / organización (OrgDashboard)
+ * coincide con lo que devuelve getEmprendedorDashboard en backend
+ */
+export interface OrgDashboard {
+  resumen: EmprendedorResumenRow | null;
+  ingresos_mensuales: EmprendedorIngresoMensualRow[];
+  ingresos_por_categoria: EmprendedorIngresoCategoriaRow[];
+  publicaciones: EmprendedorPublicacionDetalleRow[];
+  impacto_por_categoria: EmprendedorImpactoCategoriaRow[];
+  clientes_recurrentes: EmprendedorClienteRecurrenteRow[];
+}
+
+// 💵 Monetización por día (vw_monetizacion_ingresos_por_dia)
+export interface MonetizacionIngresosDia {
+  fecha: string;        // '2025-11-26' (ISO date)
+  compras_ok: number;
+  bs_total: string;     // NUMERIC(10,2) → string
+  creditos_total: number;
 }
