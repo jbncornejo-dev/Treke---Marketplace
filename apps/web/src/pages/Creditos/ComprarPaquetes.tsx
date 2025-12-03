@@ -20,6 +20,11 @@ import {
   type SuscripcionUser 
 } from "../../api/creditos";
 
+
+import AdsFooter from "../../components/AdsFooter";
+
+
+
 export default function CreditosPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<"paquetes" | "planes">("paquetes");
@@ -343,6 +348,9 @@ export default function CreditosPage() {
             </div>
         </div>
       )}
+        {/* ...sección de paquetes, planes, etc... */}
+
+    <AdsFooter ubicacion="creditos" />
 
     </div>
   );

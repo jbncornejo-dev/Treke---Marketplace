@@ -14,6 +14,7 @@ import ComprarPaquetes from "./pages/Creditos/ComprarPaquetes";
 import IntercambiosPage from "./pages/Intercambios/IntercambiosPage";
 import UserReportsPage from "./pages/reports/UserReportsPage";
 import AdminReportsPage from "./pages/reports/AdminReportsPage";
+import AdminAdsPage from "./pages/admin/AdminAdsPage";
 
 
 import SettingsPage from "./pages/profile/SettingsPage";
@@ -123,6 +124,13 @@ export default function App() {
               <AdminReportsPage />
             </AdminRoute>
           } />
+          
+          <Route path="/admin/anuncios" element={
+               <AdminRoute>
+          <AdminAdsPage />
+          </AdminRoute>
+  }
+/>
 
 
         </Routes>

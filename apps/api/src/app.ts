@@ -9,6 +9,9 @@ import creditosRoutes from "./modules/creditos/creditos.routes";
 import intercambiosRoutes from "./modules/intercambios/intercambios.routes";
 import adminReportRouter from "./modules/reports_admin/reports_admin.routes";
 import  {userReportRouter}  from "./modules/report-user/userReport.routes";
+import anunciosRoutes from "./modules/anuncios/anuncios.routes";
+
+
 
 const app = express();
 
@@ -22,7 +25,7 @@ app.use("/api", creditosRoutes);
 app.use("/api", intercambiosRoutes);
 app.use("/api/admin/reportes", adminReportRouter);
 app.use("/api/user/reportes", userReportRouter);
-
+app.use("/api", anunciosRoutes);
 
 // 🔹 Archivos estáticos (fotos de publicaciones, etc.)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

@@ -11,6 +11,8 @@ import {
   ArrowUpDown,
   ShoppingBag
 } from "lucide-react";
+import AdsFooter from "../../components/AdsFooter";
+
 
 // 👇 Tus imports de API se mantienen igual
 import { list, getCategorias, toggleFav, type MarketItem, type MarketListResp } from "../../api/market";
@@ -230,7 +232,7 @@ export default function Marketplace() {
       >
          <Plus size={32} />
       </button>
-
+   <AdsFooter ubicacion="market" />
     </div>
   );
 }
@@ -306,6 +308,8 @@ function VibrantCard({ item }: { item: MarketItem }) {
                <ArrowUpDown size={16} className="rotate-45 group-hover:rotate-90 transition-transform"/>
             </div>
          </div>
+         
+         
       </div>
     </Link>
   );
