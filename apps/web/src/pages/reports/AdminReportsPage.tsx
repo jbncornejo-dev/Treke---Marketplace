@@ -21,6 +21,22 @@ import type {
 
 import SectionCard from "../../components/Reportes/SectionCard";
 
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+
 const tabs = [
   "Dashboard",
   "Comunidad",
@@ -32,15 +48,29 @@ const tabs = [
 
 type TabKey = (typeof tabs)[number];
 
+const CHART_COLORS = [
+  "#10b981",
+  "#22c55e",
+  "#3b82f6",
+  "#a855f7",
+  "#f97316",
+  "#eab308",
+  "#ec4899",
+  "#06b6d4",
+];
+
 export default function AdminReportsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("Dashboard");
 
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [comunidad, setComunidad] = useState<ComunidadResponse | null>(null);
-  const [publicaciones, setPublicaciones] = useState<PublicacionesResponse | null>(null);
-  const [monetizacion, setMonetizacion] = useState<MonetizacionResponse | null>(null);
+  const [publicaciones, setPublicaciones] =
+    useState<PublicacionesResponse | null>(null);
+  const [monetizacion, setMonetizacion] =
+    useState<MonetizacionResponse | null>(null);
   const [impacto, setImpacto] = useState<ImpactoResponse | null>(null);
-  const [intercambios, setIntercambios] = useState<IntercambiosResponse | null>(null);
+  const [intercambios, setIntercambios] =
+    useState<IntercambiosResponse | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,63 +150,61 @@ export default function AdminReportsPage() {
       {/* Contenido por tab */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {/* ============== DASHBOARD ============== */}
-{activeTab === "Dashboard" && dashboard && (() => {
-  // dashboard puede venir como { resumen: {...} } o directamente como {...}
-  const raw = dashboard as any;
-  const resumen = raw?.resumen ?? raw;
+        {activeTab === "Dashboard" &&
+          dashboard &&
+          (() => {
+            const raw = dashboard as any;
+            const resumen = raw?.resumen ?? raw;
 
-  if (!resumen) {
-    return (
-      <SectionCard title="Resumen general">
-        <div className="text-xs text-neutral-400">
-          Sin datos de dashboard disponibles.
-        </div>
-      </SectionCard>
-    );
-  }
+            if (!resumen) {
+              return (
+                <SectionCard title="Resumen general">
+                  <div className="text-xs text-neutral-400">
+                    Sin datos de dashboard disponibles.
+                  </div>
+                </SectionCard>
+              );
+            }
 
-  return (
-    <SectionCard title="Resumen general">
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <KPI
-          label="Ingresos totales (Bs)"
-          value={resumen.ingresos_total_bs}
-        />
-        <KPI
-          label="Créditos vendidos"
-          value={resumen.creditos_vendidos_total}
-        />
-        <KPI
-          label="Usuarios registrados"
-          value={resumen.usuarios_registrados}
-        />
-        <KPI
-          label="Usuarios activos"
-          value={resumen.usuarios_activos}
-        />
-        <KPI
-          label="Intercambios completados"
-          value={resumen.intercambios_completados}
-        />
-        <KPI
-          label="CO₂ evitado (kg)"
-          value={resumen.impacto_total_co2_kg}
-        />
-        <KPI
-          label="Energía ahorrada (kWh)"
-          value={resumen.impacto_total_energia_kwh}
-        />
-        <KPI
-          label="Agua preservada (L)"
-          value={resumen.impacto_total_agua_l}
-        />
-      </div>
-    </SectionCard>
-  );
-})()}
-
-
-
+            return (
+              <SectionCard title="Resumen general">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <KPI
+                    label="Ingresos totales (Bs)"
+                    value={resumen.ingresos_total_bs}
+                  />
+                  <KPI
+                    label="Créditos vendidos"
+                    value={resumen.creditos_vendidos_total}
+                  />
+                  <KPI
+                    label="Usuarios registrados"
+                    value={resumen.usuarios_registrados}
+                  />
+                  <KPI
+                    label="Usuarios activos"
+                    value={resumen.usuarios_activos}
+                  />
+                  <KPI
+                    label="Intercambios completados"
+                    value={resumen.intercambios_completados}
+                  />
+                  <KPI
+                    label="CO₂ evitado (kg)"
+                    value={resumen.impacto_total_co2_kg}
+                  />
+                  <KPI
+                    label="Energía ahorrada (kWh)"
+                    value={resumen.impacto_total_energia_kwh}
+                  />
+                  <KPI
+                    label="Agua preservada (L)"
+                    value={resumen.impacto_total_agua_l}
+                  />
+                </div>
+              </SectionCard>
+            );
+          })()}
 
         {/* ============== COMUNIDAD ============== */}
         {activeTab === "Comunidad" && comunidad && (
@@ -261,7 +289,13 @@ export default function AdminReportsPage() {
 
             <SectionCard title="Ranking participación (TOP 10)">
               <SimpleTable
-                headers={["#", "Usuario", "Puntaje", "Intercambios", "Compras créditos"]}
+                headers={[
+                  "#",
+                  "Usuario",
+                  "Puntaje",
+                  "Intercambios",
+                  "Compras créditos",
+                ]}
                 rows={(comunidad.ranking_participacion ?? []).map((r) => [
                   r.ranking,
                   r.full_name ?? r.email,
@@ -345,7 +379,7 @@ export default function AdminReportsPage() {
                 headers={["Ubicación", "Total publicaciones"]}
                 rows={(publicaciones.por_ubicacion ?? []).map((r) => [
                   r.ubicacion_texto,
-                  r.total_publicaciones ?? r.total_publicaciones, // por si cambiaste nombre
+                  r.total_publicaciones ?? r.total_publicaciones,
                 ])}
               />
             </SectionCard>
@@ -368,254 +402,756 @@ export default function AdminReportsPage() {
         )}
 
         {/* ============== MONETIZACIÓN ============== */}
-{activeTab === "Monetización" && monetizacion && (() => {
-  const raw = monetizacion as any;
+{activeTab === "Monetización" &&
+  monetizacion &&
+  (() => {
+    const raw = monetizacion as any;
 
-  // Puede venir como { resumen_totales: {...} } o parecido
-  const resumen =
-    raw?.resumen_totales ??
-    raw?.resumen ??
-    raw;
+    const resumen =
+      raw?.resumen_totales ?? raw?.resumen ?? raw;
 
-  const usuariosPagadores = raw?.usuarios_pagadores;
-  const ingresosPorFuente = raw?.ingresos_por_fuente ?? [];
-  const rankingGasto = raw?.ranking_gasto_total ?? [];
-  const ingresosDia = raw?.ingresos_dia ?? [];
-  const ingresosSemana = raw?.ingresos_semana ?? [];
-  const ingresosMes = raw?.ingresos_mes ?? [];
-  const ingresosAnio = raw?.ingresos_anio ?? [];
-  const inflacionMensual = raw?.inflacion_mensual ?? [];
-  const creditosGanVsComp = raw?.creditos_ganados_vs_comprados ?? [];
-  const rankingCreditosAcum = raw?.ranking_creditos_acumulados ?? [];
+    const usuariosPagadores =
+      raw?.usuarios_pagadores_resumen ?? raw?.usuarios_pagadores;
+    const ingresosPorFuente = raw?.ingresos_por_fuente ?? [];
+    const rankingGasto =
+      raw?.ranking_usuarios_gasto_total ?? raw?.ranking_gasto_total ?? [];
+    const ingresosDia = raw?.ingresos_dia ?? [];
+    const ingresosSemana = raw?.ingresos_semana ?? [];
+    const ingresosMes = raw?.ingresos_mes ?? [];
+    const ingresosAnio = raw?.ingresos_anio ?? [];
+    const inflacionMensual =
+      raw?.inflacion_creditos_mensual ?? raw?.inflacion_mensual ?? [];
+    const creditosGanVsComp =
+      raw?.creditos_ganados_vs_comprados ?? [];
+    const rankingCreditosAcum =
+      raw?.ranking_usuarios_creditos_acumulados ??
+      raw?.ranking_creditos_acumulados ??
+      [];
 
-  if (!resumen) {
-    return (
-      <SectionCard title="Resumen monetización">
-        <div className="text-xs text-neutral-400">
-          Sin datos de monetización disponibles.
-        </div>
-      </SectionCard>
-    );
-  }
-
-  return (
-    <>
-      {/* 1) Ingresos totales + créditos vendidos totales */}
-      <SectionCard title="Resumen monetización">
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <KPI
-            label="Ingresos totales (Bs)"
-            value={resumen.ingresos_total_bs}
-          />
-          <KPI
-            label="Créditos vendidos totales"
-            value={resumen.creditos_vendidos_creditos}
-          />
-          <KPI
-            label="Ingresos por planes (Bs)"
-            value={resumen.ingresos_bs_planes}
-          />
-          <KPI
-            label="Ingresos por anuncios (Bs)"
-            value={resumen.ingresos_bs_anuncios}
-          />
-        </div>
-      </SectionCard>
-
-      {/* 2) Usuarios con al menos una compra vs sin pago */}
-      <SectionCard title="Usuarios pagadores vs usuarios sin pago">
-        {usuariosPagadores ? (
-          <SimpleTable
-            headers={["Total usuarios", "Pagadores", "Sin pago"]}
-            rows={[
-              [
-                usuariosPagadores.total_usuarios,
-                usuariosPagadores.usuarios_pagadores,
-                usuariosPagadores.usuarios_sin_pago,
-              ],
-            ]}
-          />
-        ) : (
+    if (!resumen) {
+      return (
+        <SectionCard title="Resumen monetización">
           <div className="text-xs text-neutral-400">
-            Sin datos de usuarios pagadores.
+            Sin datos de monetización disponibles.
           </div>
-        )}
-      </SectionCard>
+        </SectionCard>
+      );
+    }
 
-      {/* 3) Ingresos por créditos vs planes vs anuncios */}
-      <SectionCard title="Ingresos por fuente (créditos / planes / anuncios)">
-        <SimpleTable
-          headers={["Fuente", "Ingresos (Bs)", "Créditos"]}
-          rows={ingresosPorFuente.map((r: any) => [
-            r.fuente,
-            r.ingresos_total_bs,
-            r.creditos_totales,
-          ])}
-        />
-      </SectionCard>
+    const resumenDistribucion = [
+      {
+        name: "Créditos",
+        value: Number(resumen.ingresos_bs_creditos ?? 0),
+      },
+      {
+        name: "Planes",
+        value: Number(resumen.ingresos_bs_planes ?? 0),
+      },
+      {
+        name: "Anuncios",
+        value: Number(resumen.ingresos_bs_anuncios ?? 0),
+      },
+    ];
 
-      {/* 4) Ingresos por día */}
-      <SectionCard title="Ingresos por día">
-        <SimpleTable
-          headers={[
-            "Fecha",
-            "Total (Bs)",
-            "Créditos (Bs)",
-            "Planes (Bs)",
-            "Anuncios (Bs)",
-          ]}
-          rows={ingresosDia.map((r: any) => [
-            r.fecha_dia,
-            r.ingresos_total_bs,
-            r.ingresos_bs_creditos,
-            r.ingresos_bs_planes,
-            r.ingresos_bs_anuncios,
-          ])}
-        />
-      </SectionCard>
+    return (
+      <>
+        {/* 1) Resumen monetización + gráfico de distribución */}
+        <SectionCard title="Resumen monetización">
+          <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <KPI
+                label="Ingresos totales (Bs)"
+                value={resumen.ingresos_total_bs}
+              />
+              <KPI
+                label="Créditos vendidos totales"
+                value={resumen.creditos_vendidos_creditos}
+              />
+              <KPI
+                label="Ingresos por planes (Bs)"
+                value={resumen.ingresos_bs_planes}
+              />
+              <KPI
+                label="Ingresos por anuncios (Bs)"
+                value={resumen.ingresos_bs_anuncios}
+              />
+            </div>
+            <ChartWrapper>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={resumenDistribucion}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={45}
+                    outerRadius={80}
+                    paddingAngle={4}
+                  >
+                    {resumenDistribucion.map((_, idx) => (
+                      <Cell
+                        key={idx}
+                        fill={CHART_COLORS[idx % CHART_COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartWrapper>
+          </div>
+        </SectionCard>
 
-      {/* 5) Ingresos por semana */}
-      <SectionCard title="Ingresos por semana">
-        <SimpleTable
-          headers={[
-            "Semana",
-            "Fecha inicio",
-            "Total (Bs)",
-            "Créditos (Bs)",
-            "Planes (Bs)",
-            "Anuncios (Bs)",
-          ]}
-          rows={ingresosSemana.map((r: any) => [
-            `${r.anio_iso}-W${r.semana_iso}`,
-            r.semana_inicio,
-            r.ingresos_total_bs,
-            r.ingresos_bs_creditos,
-            r.ingresos_bs_planes,
-            r.ingresos_bs_anuncios,
-          ])}
-        />
-      </SectionCard>
+        {/* 2) Usuarios pagadores vs sin pago (gráfico + tabla) */}
+        <SectionCard title="Usuarios pagadores vs usuarios sin pago">
+          <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
+            <div>
+              {usuariosPagadores ? (
+                <SimpleTable
+                  headers={["Total usuarios", "Pagadores", "Sin pago"]}
+                  rows={[
+                    [
+                      usuariosPagadores.total_usuarios,
+                      usuariosPagadores.usuarios_pagadores,
+                      usuariosPagadores.usuarios_sin_pago,
+                    ],
+                  ]}
+                />
+              ) : (
+                <div className="text-xs text-neutral-400">
+                  Sin datos de usuarios pagadores.
+                </div>
+              )}
+            </div>
+            {usuariosPagadores && (
+              <ChartWrapper>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        {
+                          name: "Pagadores",
+                          value:
+                            Number(
+                              usuariosPagadores.usuarios_pagadores ?? 0
+                            ) || 0,
+                        },
+                        {
+                          name: "Sin pago",
+                          value:
+                            Number(
+                              usuariosPagadores.usuarios_sin_pago ?? 0
+                            ) || 0,
+                        },
+                      ]}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={40}
+                      outerRadius={75}
+                      paddingAngle={4}
+                    >
+                      <Cell fill="#10b981" />
+                      <Cell fill="#4b5563" />
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartWrapper>
+            )}
+          </div>
+        </SectionCard>
 
-      {/* 6) Ingresos por mes */}
-      <SectionCard title="Ingresos por mes">
-        <SimpleTable
-          headers={[
-            "Mes",
-            "Total (Bs)",
-            "Créditos (Bs)",
-            "Planes (Bs)",
-            "Anuncios (Bs)",
-            "Créditos vendidos",
-          ]}
-          rows={ingresosMes.map((r: any) => [
-            r.periodo_label,
-            r.ingresos_total_bs,
-            r.ingresos_bs_creditos,
-            r.ingresos_bs_planes,
-            r.ingresos_bs_anuncios,
-            r.creditos_vendidos_creditos,
-          ])}
-        />
-      </SectionCard>
+        {/* 3) Ingresos por fuente (barras mejoradas + tabla) */}
+        <SectionCard title="Ingresos por fuente (créditos / planes / anuncios)">
+          <div className="grid gap-4 lg:grid-cols-[1.3fr,1fr]">
+            <ChartWrapper>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={ingresosPorFuente.map((r: any) => ({
+                    name: r.fuente,
+                    ingresos: Number(r.ingresos_total_bs ?? 0),
+                    creditos: Number(r.creditos_totales ?? 0),
+                  }))}
+                  margin={{
+                    top: 10,
+                    right: 10,
+                    left: 0,
+                    bottom: 20,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar
+                    dataKey="ingresos"
+                    name="Ingresos (Bs)"
+                    barSize={28}
+                    radius={[8, 8, 8, 8]}
+                    fill="#10b981"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartWrapper>
+            <SimpleTable
+              headers={["Fuente", "Ingresos (Bs)", "Créditos"]}
+              rows={ingresosPorFuente.map((r: any) => [
+                r.fuente,
+                r.ingresos_total_bs,
+                r.creditos_totales,
+              ])}
+            />
+          </div>
+        </SectionCard>
 
-      {/* 7) Ingresos por año */}
-      <SectionCard title="Ingresos por año">
-        <SimpleTable
-          headers={[
-            "Año",
-            "Total (Bs)",
-            "Créditos (Bs)",
-            "Planes (Bs)",
-            "Anuncios (Bs)",
-            "Créditos vendidos",
-          ]}
-          rows={ingresosAnio.map((r: any) => [
-            r.anio,
-            r.ingresos_total_bs,
-            r.ingresos_bs_creditos,
-            r.ingresos_bs_planes,
-            r.ingresos_bs_anuncios,
-            r.creditos_vendidos_creditos,
-          ])}
-        />
-      </SectionCard>
+        {/* 4) Ingresos por día (línea + tabla) */}
+        <SectionCard title="Ingresos por día">
+          <div className="space-y-3">
+            <ChartWrapper>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={ingresosDia.map((r: any) => ({
+                    fecha: r.fecha_dia,
+                    total: Number(r.ingresos_total_bs ?? 0),
+                    creditos: Number(r.ingresos_bs_creditos ?? 0),
+                    planes: Number(r.ingresos_bs_planes ?? 0),
+                    anuncios: Number(r.ingresos_bs_anuncios ?? 0),
+                  }))}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                  <XAxis dataKey="fecha" tick={{ fontSize: 11 }} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    name="Total (Bs)"
+                    stroke="#10b981"
+                    strokeWidth={2.2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="creditos"
+                    name="Créditos (Bs)"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="planes"
+                    name="Planes (Bs)"
+                    stroke="#a855f7"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="anuncios"
+                    name="Anuncios (Bs)"
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartWrapper>
 
-      {/* 8) Ranking usuarios que más gastaron */}
-      <SectionCard title="Ranking usuarios que más gastaron (créditos, planes, anuncios)">
-        <SimpleTable
-          headers={[
-            "#",
-            "Usuario",
-            "Gasto créditos (Bs)",
-            "Gasto planes (Bs)",
-            "Gasto anuncios (Bs)",
-            "Total (Bs)",
-          ]}
-          rows={rankingGasto.map((r: any) => [
-            r.ranking,
-            r.full_name ?? r.email,
-            r.gasto_creditos_bs,
-            r.gasto_planes_bs,
-            r.gasto_anuncios_bs,
-            r.gasto_total_bs,
-          ])}
-        />
-      </SectionCard>
+            <SimpleTable
+              headers={[
+                "Fecha",
+                "Total (Bs)",
+                "Créditos (Bs)",
+                "Planes (Bs)",
+                "Anuncios (Bs)",
+              ]}
+              rows={ingresosDia.map((r: any) => [
+                r.fecha_dia,
+                r.ingresos_total_bs,
+                r.ingresos_bs_creditos,
+                r.ingresos_bs_planes,
+                r.ingresos_bs_anuncios,
+              ])}
+            />
+          </div>
+        </SectionCard>
 
-      {/* 9) Inflación de créditos por mes */}
-      <SectionCard title="Inflación de créditos por mes">
-        <SimpleTable
-          headers={[
-            "Mes",
-            "Créditos generados",
-            "Créditos gastados",
-            "Inflación neta",
-          ]}
-          rows={inflacionMensual.map((r: any) => [
-            r.periodo_label,
-            r.creditos_generados,
-            r.creditos_gastados,
-            r.inflacion_neta,
-          ])}
-        />
-      </SectionCard>
+        {/* 5) Ingresos por semana (línea + tabla) */}
+        <SectionCard title="Ingresos por semana">
+          <div className="space-y-3">
+            <ChartWrapper>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={ingresosSemana.map((r: any) => ({
+                    semana: `${r.anio_iso}-W${r.semana_iso}`,
+                    total: Number(r.ingresos_total_bs ?? 0),
+                    creditos: Number(r.ingresos_bs_creditos ?? 0),
+                    planes: Number(r.ingresos_bs_planes ?? 0),
+                    anuncios: Number(r.ingresos_bs_anuncios ?? 0),
+                  }))}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                  <XAxis dataKey="semana" tick={{ fontSize: 11 }} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    name="Total (Bs)"
+                    stroke="#10b981"
+                    strokeWidth={2.2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="creditos"
+                    name="Créditos (Bs)"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="planes"
+                    name="Planes (Bs)"
+                    stroke="#a855f7"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="anuncios"
+                    name="Anuncios (Bs)"
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartWrapper>
 
-      {/* 10) Créditos ganados vs comprados */}
-      <SectionCard title="Créditos ganados vs comprados por usuario">
-        <SimpleTable
-          headers={[
-            "Usuario",
-            "Créditos comprados",
-            "Créditos ganados",
-            "Total créditos",
-            "% comprados",
-          ]}
-          rows={creditosGanVsComp.map((r: any) => [
-            r.full_name ?? r.email,
-            r.creditos_comprados,
-            r.creditos_ganados,
-            r.total_creditos,
-            r.porcentaje_comprado,
-          ])}
-        />
-      </SectionCard>
+            <SimpleTable
+              headers={[
+                "Semana",
+                "Fecha inicio",
+                "Total (Bs)",
+                "Créditos (Bs)",
+                "Planes (Bs)",
+                "Anuncios (Bs)",
+              ]}
+              rows={ingresosSemana.map((r: any) => [
+                `${r.anio_iso}-W${r.semana_iso}`,
+                r.semana_inicio,
+                r.ingresos_total_bs,
+                r.ingresos_bs_creditos,
+                r.ingresos_bs_planes,
+                r.ingresos_bs_anuncios,
+              ])}
+            />
+          </div>
+        </SectionCard>
 
-      {/* 11) Usuarios con más créditos acumulados */}
-      <SectionCard title="Usuarios con más créditos acumulados (ranking)">
-        <SimpleTable
-          headers={["#", "Usuario", "Saldo total de créditos"]}
-          rows={rankingCreditosAcum.map((r: any) => [
-            r.ranking,
-            r.full_name ?? r.email,
-            r.saldo_total,
-          ])}
-        />
-      </SectionCard>
-    </>
-  );
-})()}
+        {/* 6) Ingresos por mes (línea + tabla) */}
+        <SectionCard title="Ingresos por mes">
+          <div className="space-y-3">
+            <ChartWrapper>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={ingresosMes.map((r: any) => ({
+                    periodo: r.periodo_label,
+                    total: Number(r.ingresos_total_bs ?? 0),
+                    creditos: Number(r.ingresos_bs_creditos ?? 0),
+                    planes: Number(r.ingresos_bs_planes ?? 0),
+                    anuncios: Number(r.ingresos_bs_anuncios ?? 0),
+                  }))}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                  <XAxis dataKey="periodo" tick={{ fontSize: 11 }} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    name="Total (Bs)"
+                    stroke="#10b981"
+                    strokeWidth={2.2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="creditos"
+                    name="Créditos (Bs)"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="planes"
+                    name="Planes (Bs)"
+                    stroke="#a855f7"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="anuncios"
+                    name="Anuncios (Bs)"
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartWrapper>
 
+            <SimpleTable
+              headers={[
+                "Mes",
+                "Total (Bs)",
+                "Créditos (Bs)",
+                "Planes (Bs)",
+                "Anuncios (Bs)",
+                "Créditos vendidos",
+              ]}
+              rows={ingresosMes.map((r: any) => [
+                r.periodo_label,
+                r.ingresos_total_bs,
+                r.ingresos_bs_creditos,
+                r.ingresos_bs_planes,
+                r.ingresos_bs_anuncios,
+                r.creditos_vendidos_creditos,
+              ])}
+            />
+          </div>
+        </SectionCard>
 
+        {/* 7) Ingresos por año (línea + tabla) */}
+        <SectionCard title="Ingresos por año">
+          <div className="space-y-3">
+            <ChartWrapper>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={ingresosAnio.map((r: any) => ({
+                    anio: r.anio,
+                    total: Number(r.ingresos_total_bs ?? 0),
+                    creditos: Number(r.ingresos_bs_creditos ?? 0),
+                    planes: Number(r.ingresos_bs_planes ?? 0),
+                    anuncios: Number(r.ingresos_bs_anuncios ?? 0),
+                  }))}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                  <XAxis dataKey="anio" tick={{ fontSize: 11 }} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    name="Total (Bs)"
+                    stroke="#10b981"
+                    strokeWidth={2.2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="creditos"
+                    name="Créditos (Bs)"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="planes"
+                    name="Planes (Bs)"
+                    stroke="#a855f7"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="anuncios"
+                    name="Anuncios (Bs)"
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartWrapper>
+
+            <SimpleTable
+              headers={[
+                "Año",
+                "Total (Bs)",
+                "Créditos (Bs)",
+                "Planes (Bs)",
+                "Anuncios (Bs)",
+                "Créditos vendidos",
+              ]}
+              rows={ingresosAnio.map((r: any) => [
+                r.anio,
+                r.ingresos_total_bs,
+                r.ingresos_bs_creditos,
+                r.ingresos_bs_planes,
+                r.ingresos_bs_anuncios,
+                r.creditos_vendidos_creditos,
+              ])}
+            />
+          </div>
+        </SectionCard>
+
+        {/* 8) Ranking usuarios que más gastaron (barras bonitas + tabla) */}
+        <SectionCard title="Ranking usuarios que más gastaron (créditos, planes, anuncios)">
+          <div className="space-y-3">
+            <ChartWrapper>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={rankingGasto.map((r: any) => ({
+                    name: r.full_name ?? r.email,
+                    total: Number(r.gasto_total_bs ?? 0),
+                  }))}
+                  layout="vertical"
+                  margin={{
+                    top: 10,
+                    right: 20,
+                    left: 80,
+                    bottom: 10,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
+                  <XAxis type="number" />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={160}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <Tooltip />
+                  <Bar
+                    dataKey="total"
+                    name="Total (Bs)"
+                    barSize={22}
+                    radius={[6, 6, 6, 6]}
+                    fill="#10b981"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartWrapper>
+
+            <SimpleTable
+              headers={[
+                "#",
+                "Usuario",
+                "Gasto créditos (Bs)",
+                "Gasto planes (Bs)",
+                "Gasto anuncios (Bs)",
+                "Total (Bs)",
+              ]}
+              rows={rankingGasto.map((r: any) => [
+                r.ranking,
+                r.full_name ?? r.email,
+                r.gasto_creditos_bs,
+                r.gasto_planes_bs,
+                r.gasto_anuncios_bs,
+                r.gasto_total_bs,
+              ])}
+            />
+          </div>
+        </SectionCard>
+
+        {/* 9) Inflación de créditos por mes (línea + tabla) */}
+        <SectionCard title="Inflación de créditos por mes">
+          <div className="space-y-3">
+            <ChartWrapper>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={inflacionMensual.map((r: any) => ({
+                    periodo: r.periodo_label,
+                    generados: Number(r.creditos_generados ?? 0),
+                    gastados: Number(r.creditos_gastados ?? 0),
+                    inflacion: Number(r.inflacion_neta ?? 0),
+                  }))}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                  <XAxis dataKey="periodo" tick={{ fontSize: 11 }} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="generados"
+                    name="Generados"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="gastados"
+                    name="Gastados"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="inflacion"
+                    name="Inflación neta"
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartWrapper>
+
+            <SimpleTable
+              headers={[
+                "Mes",
+                "Créditos generados",
+                "Créditos gastados",
+                "Inflación neta",
+              ]}
+              rows={inflacionMensual.map((r: any) => [
+                r.periodo_label,
+                r.creditos_generados,
+                r.creditos_gastados,
+                r.inflacion_neta,
+              ])}
+            />
+          </div>
+        </SectionCard>
+
+        {/* 10) Créditos ganados vs comprados por usuario (barras mejoradas + tabla) */}
+        <SectionCard title="Créditos ganados vs comprados por usuario">
+          <div className="space-y-3">
+            <ChartWrapper>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={creditosGanVsComp.map((r: any) => ({
+                    name: r.full_name ?? r.email,
+                    comprados: Number(r.creditos_comprados ?? 0),
+                    ganados: Number(r.creditos_ganados ?? 0),
+                  }))}
+                  layout="vertical"
+                  margin={{
+                    top: 10,
+                    right: 20,
+                    left: 80,
+                    bottom: 10,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
+                  <XAxis type="number" />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={160}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <Tooltip />
+                  <Legend />
+                  <Bar
+                    dataKey="comprados"
+                    name="Comprados"
+                    barSize={20}
+                    radius={[6, 6, 6, 6]}
+                    fill="#3b82f6"
+                  />
+                  <Bar
+                    dataKey="ganados"
+                    name="Ganados"
+                    barSize={20}
+                    radius={[6, 6, 6, 6]}
+                    fill="#10b981"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartWrapper>
+
+            <SimpleTable
+              headers={[
+                "Usuario",
+                "Créditos comprados",
+                "Créditos ganados",
+                "Total créditos",
+                "% comprados",
+              ]}
+              rows={creditosGanVsComp.map((r: any) => [
+                r.full_name ?? r.email,
+                r.creditos_comprados,
+                r.creditos_ganados,
+                r.total_creditos,
+                r.porcentaje_comprado,
+              ])}
+            />
+          </div>
+        </SectionCard>
+
+        {/* 11) Usuarios con más créditos acumulados (barras mejoradas + tabla) */}
+        <SectionCard title="Usuarios con más créditos acumulados (ranking)">
+          <div className="space-y-3">
+            <ChartWrapper>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={rankingCreditosAcum.map((r: any) => ({
+                    name: r.full_name ?? r.email,
+                    saldo: Number(r.saldo_total ?? 0),
+                  }))}
+                  layout="vertical"
+                  margin={{
+                    top: 10,
+                    right: 20,
+                    left: 80,
+                    bottom: 10,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
+                  <XAxis type="number" />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={160}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <Tooltip />
+                  <Bar
+                    dataKey="saldo"
+                    name="Saldo total"
+                    barSize={22}
+                    radius={[6, 6, 6, 6]}
+                    fill="#a855f7"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartWrapper>
+
+            <SimpleTable
+              headers={["#", "Usuario", "Saldo total de créditos"]}
+              rows={rankingCreditosAcum.map((r: any) => [
+                r.ranking,
+                r.full_name ?? r.email,
+                r.saldo_total,
+              ])}
+            />
+          </div>
+        </SectionCard>
+      </>
+    );
+  })()}
 
         {/* ============== IMPACTO AMBIENTAL ============== */}
         {activeTab === "Impacto Ambiental" && impacto && (
@@ -809,11 +1345,17 @@ function KPI({ label, value }: { label: string; value: number | string }) {
   );
 }
 
+function ChartWrapper({ children }: { children: ReactNode }) {
+  return (
+    <div className="h-64 w-full rounded-xl bg-neutral-950/70 px-2 py-2">
+      {children}
+    </div>
+  );
+}
 
 function renderCellValue(v: ReactNode | null): ReactNode {
   if (v === null || v === undefined) return "-";
 
-  // Caso especial: objetos tipo interval de pg (days, hours, minutes, milliseconds)
   if (typeof v === "object") {
     const anyV: any = v;
 
@@ -829,7 +1371,6 @@ function renderCellValue(v: ReactNode | null): ReactNode {
       return `${d}d ${h}h ${m}m`;
     }
 
-    // Fallback: por si llega algún otro objeto raro
     return JSON.stringify(v);
   }
 
