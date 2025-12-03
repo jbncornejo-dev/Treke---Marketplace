@@ -1,8 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { 
+  Settings, 
+  FileText, 
+  Wallet, 
+  Repeat, 
+  Leaf, 
+  Star, 
+  MapPin, 
+  Calendar, 
+  Heart,
+  Package,
+  History,
+  MessageSquare
+} from "lucide-react";
 import { fetchPanel, getCurrentUserId, type PanelResponse } from "../../api/profile";
 
-// 👇 Agregamos 'favs' al tipo Tab
+// Tipo Tab
 type Tab = "pubs" | "movs" | "impact" | "reviews" | "favs";
 
 export default function Profile() {
@@ -36,9 +50,25 @@ export default function Profile() {
     return data.usuario.full_name || data.usuario.email.split("@")[0];
   }, [data]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#f6f8f7] dark:bg-[#112117]"><div className="animate-spin rounded-full h-8 w-8 border-2 border-[#2ecc71] border-t-transparent"/></div>;
+  // Loading State
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+       <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-emerald-500 border-t-transparent"/>
+          <p className="text-gray-400 text-sm">Cargando perfil...</p>
+       </div>
+    </div>
+  );
   
-  if (msg) return <div className="min-h-screen flex items-center justify-center bg-[#f6f8f7] dark:bg-[#112117] text-gray-500">{msg}</div>;
+  // Error State
+  if (msg) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
+       <div className="bg-white p-6 rounded-2xl shadow-sm text-center max-w-sm">
+          <p className="text-gray-500 mb-4">{msg}</p>
+          <Link to="/login" className="text-emerald-600 font-bold hover:underline">Ir a Iniciar Sesión</Link>
+       </div>
+    </div>
+  );
   
   if (!data) return null;
 
@@ -48,172 +78,248 @@ export default function Profile() {
   const rating = Number(data.usuario.calificacion_prom ?? 0);
 
   return (
-    <div className="min-h-screen bg-[#f6f8f7] dark:bg-[#112117] text-[#112117] dark:text-[#f5f5f5] font-sans pb-24 transition-colors">
+    <div className="min-h-screen bg-gray-50/50 font-sans text-gray-900 pb-24">
       
       {/* --- HEADER PERFIL --- */}
-      <div className="bg-white dark:bg-[#1a2e22] border-b border-gray-200 dark:border-gray-800 pt-6 pb-4 px-4">
-         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center gap-6">
+      <div className="bg-white border-b border-gray-100">
+         <div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
             
-            <div className="flex items-center gap-4 flex-1">
-               <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden border-4 border-white dark:border-[#112117] shadow-md">
-                  {data.usuario.foto ? (
-                    <img src={data.usuario.foto} alt="avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-3xl text-gray-400">👤</div>
-                  )}
-               </div>
-               <div>
-                  <h2 className="text-2xl font-bold tracking-tight">{nombre}</h2>
-                  <div className="flex items-center gap-2 text-sm mt-1">
-                     <div className="flex text-amber-400"><Stars rating={rating} /></div>
-                     <span className="text-gray-500 dark:text-gray-400 font-medium">{rating.toFixed(1)} ({data.usuario.total_resenias} reseñas)</span>
+            <div className="flex flex-col md:flex-row md:items-start gap-8">
+               
+               {/* Avatar */}
+               <div className="relative shrink-0 mx-auto md:mx-0">
+                  <div className="w-28 h-28 md:w-32 md:h-32 rounded-full p-1 bg-white border border-gray-100 shadow-sm">
+                     <div className="w-full h-full rounded-full bg-gray-100 overflow-hidden">
+                        {data.usuario.foto ? (
+                           <img src={data.usuario.foto} alt="avatar" className="w-full h-full object-cover" />
+                        ) : (
+                           <div className="w-full h-full flex items-center justify-center text-4xl text-gray-300">
+                              <span className="uppercase font-bold">{nombre.charAt(0)}</span>
+                           </div>
+                        )}
+                     </div>
                   </div>
-                  {data.usuario.acerca_de && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{data.usuario.acerca_de}</p>}
+                  {/* Badge Nivel (Simulado) */}
+                  <div className="absolute bottom-1 right-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-white shadow-sm">
+                     Nivel 1
+                  </div>
+               </div>
+
+               {/* Info Principal */}
+               <div className="flex-1 text-center md:text-left">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                     <div>
+                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-1">{nombre}</h1>
+                        <div className="flex items-center justify-center md:justify-start gap-4 text-sm text-gray-500 mb-3">
+                           <div className="flex items-center gap-1">
+                              <Star size={14} className="text-amber-400 fill-amber-400"/>
+                              <span className="font-semibold text-gray-900">{rating.toFixed(1)}</span>
+                              <span className="text-gray-400">({data.usuario.total_resenias})</span>
+                           </div>
+                           <div className="flex items-center gap-1">
+                              <MapPin size={14}/>
+                              <span>Bolivia</span>
+                           </div>
+                           <div className="flex items-center gap-1">
+                              <Calendar size={14}/>
+                              <span>Miembro desde 2025</span>
+                           </div>
+                        </div>
+                        {data.usuario.acerca_de && (
+                           <p className="text-gray-600 max-w-lg mx-auto md:mx-0 leading-relaxed text-sm">
+                              {data.usuario.acerca_de}
+                           </p>
+                        )}
+                     </div>
+
+                     {/* Botones Acción */}
+                     <div className="flex gap-3 justify-center md:justify-end shrink-0">
+                        <Link to="/settings" className="p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors" title="Configuración">
+                           <Settings size={20} />
+                        </Link>
+                        <Link to="/perfil/reportes" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 hover:bg-emerald-600 text-white font-medium shadow-lg shadow-gray-200 transition-all hover:-translate-y-0.5">
+                           <FileText size={18} />
+                           <span>Reportes</span>
+                        </Link>
+                     </div>
+                  </div>
                </div>
             </div>
 
-            <div className="flex gap-3 mt-2 md:mt-0">
-               <Link to="/settings" className="h-10 px-4 flex items-center justify-center rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-white/5 text-sm font-medium transition-colors">Configuración</Link>
-               <Link to="/perfil/reportes" className="h-10 px-4 flex items-center justify-center rounded-xl bg-[#2ecc71] hover:bg-[#27ae60] text-white text-sm font-bold shadow-lg shadow-green-500/20 transition-colors">Ver Reportes</Link>
+            {/* KPIs Grid */}
+            <div className="grid grid-cols-3 gap-4 mt-10 border-t border-gray-50 pt-8">
+               <div className="text-center md:text-left px-4 border-r border-gray-100 last:border-0">
+                  <div className="flex items-center justify-center md:justify-start gap-2 mb-1 text-emerald-600 font-bold text-2xl">
+                     <Wallet size={24} className="text-emerald-500" />
+                     {saldo.toLocaleString()}
+                  </div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Créditos Disponibles</p>
+               </div>
+               <div className="text-center md:text-left px-4 border-r border-gray-100 last:border-0">
+                  <div className="flex items-center justify-center md:justify-start gap-2 mb-1 text-gray-900 font-bold text-2xl">
+                     <Repeat size={24} className="text-gray-400" />
+                     {trueques}
+                  </div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Intercambios</p>
+               </div>
+               <div className="text-center md:text-left px-4 border-r border-gray-100 last:border-0">
+                  <div className="flex items-center justify-center md:justify-start gap-2 mb-1 text-gray-900 font-bold text-2xl">
+                     <Leaf size={24} className="text-gray-400" />
+                     {co2} <span className="text-sm text-gray-500 font-medium self-end mb-1">kg</span>
+                  </div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">CO₂ Ahorrado</p>
+               </div>
             </div>
-         </div>
 
-         <div className="max-w-6xl mx-auto mt-8 grid grid-cols-3 gap-3 md:gap-6">
-            <KPICard value={saldo.toLocaleString()} label="Créditos Verdes" icon="eco" color="text-[#2ecc71]" />
-            <KPICard value={trueques.toString()} label="Trueques" icon="swap_horiz" />
-            <KPICard value={`${co2} kg`} label="CO₂ Ahorrado" icon="co2" />
          </div>
       </div>
 
-      {/* --- CONTENIDO PESTAÑAS --- */}
-      <div className="max-w-6xl mx-auto px-4 mt-6">
-         
-         {/* Navegación Tabs */}
-         <div className="flex border-b border-gray-200 dark:border-gray-800 mb-6 overflow-x-auto no-scrollbar">
-            <TabButton active={tab === "pubs"} onClick={() => setTab("pubs")} label="Mis Publicaciones" />
-            <TabButton active={tab === "favs"} onClick={() => setTab("favs")} label="Favoritos" /> {/* 👈 NUEVA TAB */}
-            <TabButton active={tab === "movs"} onClick={() => setTab("movs")} label="Historial" />
-            <TabButton active={tab === "impact"} onClick={() => setTab("impact")} label="Impacto" />
-            <TabButton active={tab === "reviews"} onClick={() => setTab("reviews")} label="Reseñas" />
+      {/* --- NAVEGACIÓN TABS --- */}
+      <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm border-b border-gray-200 mb-8">
+         <div className="max-w-5xl mx-auto flex overflow-x-auto no-scrollbar">
+            <TabButton active={tab === "pubs"} onClick={() => setTab("pubs")} icon={<Package size={18}/>} label="Publicaciones" />
+            <TabButton active={tab === "favs"} onClick={() => setTab("favs")} icon={<Heart size={18}/>} label="Favoritos" />
+            <TabButton active={tab === "movs"} onClick={() => setTab("movs")} icon={<History size={18}/>} label="Historial" />
+            <TabButton active={tab === "impact"} onClick={() => setTab("impact")} icon={<Leaf size={18}/>} label="Impacto" />
+            <TabButton active={tab === "reviews"} onClick={() => setTab("reviews")} icon={<MessageSquare size={18}/>} label="Reseñas" />
          </div>
+      </div>
 
-         {/* Tab: PUBLICACIONES */}
+      {/* --- CONTENIDO --- */}
+      <div className="max-w-5xl mx-auto px-4 min-h-[400px]">
+         
+         {/* TAB: PUBLICACIONES */}
          {tab === "pubs" && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                {data.publicaciones.map((p) => (
-                  <Link to={`/market/${p.id}`} key={p.id} className="group bg-white dark:bg-[#1a2e22] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-all">
-                     <div className="aspect-square bg-gray-100 dark:bg-black/20 relative">
+                  <Link to={`/market/${p.id}`} key={p.id} className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1">
+                     <div className="aspect-4/3 bg-gray-100 relative overflow-hidden">
                         {p.foto_principal ? (
-                           <img src={p.foto_principal} className="w-full h-full object-cover" />
+                           <img src={p.foto_principal} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={p.titulo} />
                         ) : (
-                           <div className="w-full h-full flex items-center justify-center text-gray-400">📷</div>
+                           <div className="w-full h-full flex items-center justify-center text-gray-300"><Package size={24}/></div>
                         )}
-                        <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">
+                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur text-gray-700 text-[10px] font-bold px-2 py-1 rounded-full border border-gray-100 shadow-sm uppercase">
                            {p.estado_nombre}
                         </div>
                      </div>
-                     <div className="p-3">
-                        <h3 className="font-medium truncate text-gray-900 dark:text-gray-100">{p.titulo}</h3>
-                        <p className="text-[#2ecc71] font-bold text-sm mt-1">{p.valor_creditos} créditos</p>
-                     </div>
-                  </Link>
-               ))}
-               {!data.publicaciones.length && <EmptyState msg="No tienes publicaciones activas." />}
-            </div>
-         )}
-
-         {/* Tab: FAVORITOS (NUEVO) */}
-         {tab === "favs" && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-               {data.favoritos && data.favoritos.map((p) => (
-                  <Link to={`/market/${p.id}`} key={p.id} className="group bg-white dark:bg-[#1a2e22] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-all">
-                     <div className="aspect-square bg-gray-100 dark:bg-black/20 relative">
-                        {p.foto_principal ? (
-                           <img src={p.foto_principal} className="w-full h-full object-cover" />
-                        ) : (
-                           <div className="w-full h-full flex items-center justify-center text-gray-400">📷</div>
-                        )}
-                        {/* Corazón indicador */}
-                        <div className="absolute top-2 right-2 p-1.5 bg-white/80 dark:bg-black/50 rounded-full backdrop-blur-sm text-red-500">
-                           <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                     <div className="p-4">
+                        <h3 className="font-semibold text-gray-900 truncate mb-1">{p.titulo}</h3>
+                        <div className="flex items-center justify-between">
+                           <span className="text-emerald-600 font-bold text-sm">{p.valor_creditos} Cr</span>
+                           <span className="text-xs text-gray-400">{p.categoria}</span>
                         </div>
                      </div>
-                     <div className="p-3">
-                        <h3 className="font-medium truncate text-gray-900 dark:text-gray-100">{p.titulo}</h3>
-                        <p className="text-[#2ecc71] font-bold text-sm mt-1">{p.valor_creditos} créditos</p>
-                        <p className="text-xs text-gray-500 mt-1">{p.categoria}</p>
+                  </Link>
+               ))}
+               {!data.publicaciones.length && <EmptyState icon={<Package size={48}/>} msg="No tienes publicaciones activas." sub="¡Sube tu primer producto hoy!" />}
+            </div>
+         )}
+
+         {/* TAB: FAVORITOS */}
+         {tab === "favs" && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+               {data.favoritos && data.favoritos.map((p) => (
+                  <Link to={`/market/${p.id}`} key={p.id} className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1">
+                     <div className="aspect-4/3 bg-gray-100 relative overflow-hidden">
+                        {p.foto_principal ? (
+                           <img src={p.foto_principal} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={p.titulo} />
+                        ) : (
+                           <div className="w-full h-full flex items-center justify-center text-gray-300"><Package size={24}/></div>
+                        )}
+                        <div className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow-sm text-red-500">
+                           <Heart size={14} className="fill-current"/>
+                        </div>
+                     </div>
+                     <div className="p-4">
+                        <h3 className="font-semibold text-gray-900 truncate mb-1">{p.titulo}</h3>
+                        <p className="text-emerald-600 font-bold text-sm">{p.valor_creditos} Cr</p>
                      </div>
                   </Link>
                ))}
-               {(!data.favoritos || !data.favoritos.length) && <EmptyState msg="No has guardado favoritos aún." />}
+               {(!data.favoritos || !data.favoritos.length) && <EmptyState icon={<Heart size={48}/>} msg="No tienes favoritos guardados." sub="Explora el mercado para encontrar tesoros." />}
             </div>
          )}
 
-         {/* Tab: MOVIMIENTOS */}
+         {/* TAB: HISTORIAL (Movimientos) */}
          {tab === "movs" && (
-            <div className="bg-white dark:bg-[#1a2e22] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-               <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 uppercase text-xs">
-                     <tr>
-                        <th className="px-4 py-3">Fecha</th>
-                        <th className="px-4 py-3">Tipo</th>
-                        <th className="px-4 py-3 text-right">Monto</th>
-                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                     {data.movimientos.map(m => (
-                        <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                           <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{new Date(m.fecha_movimiento).toLocaleDateString()}</td>
-                           <td className="px-4 py-3">
-                              <p className="font-medium text-gray-900 dark:text-gray-200">{m.tipo_codigo}</p>
-                              <p className="text-xs text-gray-500">{m.descripcion}</p>
-                           </td>
-                           <td className={`px-4 py-3 text-right font-bold ${m.monto_con_signo < 0 ? 'text-red-500' : 'text-[#2ecc71]'}`}>
-                              {m.monto_con_signo > 0 ? '+' : ''}{m.monto_con_signo}
-                           </td>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+               <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                     <thead className="bg-gray-50 text-gray-400 uppercase text-xs font-semibold">
+                        <tr>
+                           <th className="px-6 py-4">Fecha</th>
+                           <th className="px-6 py-4">Detalle</th>
+                           <th className="px-6 py-4 text-right">Monto</th>
                         </tr>
-                     ))}
-                  </tbody>
-               </table>
-               {!data.movimientos.length && <div className="p-8 text-center text-gray-500">Sin movimientos recientes</div>}
+                     </thead>
+                     <tbody className="divide-y divide-gray-50">
+                        {data.movimientos.map(m => (
+                           <tr key={m.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
+                                 {new Date(m.fecha_movimiento).toLocaleDateString()}
+                                 <div className="text-xs text-gray-400">{new Date(m.fecha_movimiento).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                              </td>
+                              <td className="px-6 py-4">
+                                 <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${m.monto_con_signo > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
+                                       {m.monto_con_signo > 0 ? <Wallet size={16}/> : <Repeat size={16}/>}
+                                    </div>
+                                    <div>
+                                       <p className="font-medium text-gray-900">{m.tipo_codigo}</p>
+                                       <p className="text-xs text-gray-500 max-w-[200px] sm:max-w-md truncate">{m.descripcion}</p>
+                                    </div>
+                                 </div>
+                              </td>
+                              <td className={`px-6 py-4 text-right font-bold ${m.monto_con_signo < 0 ? 'text-gray-900' : 'text-emerald-600'}`}>
+                                 {m.monto_con_signo > 0 ? '+' : ''}{m.monto_con_signo} Cr
+                              </td>
+                           </tr>
+                        ))}
+                     </tbody>
+                  </table>
+               </div>
+               {!data.movimientos.length && <div className="p-12 text-center text-gray-400">Sin movimientos recientes</div>}
             </div>
          )}
 
-         {/* Tab: IMPACTO */}
+         {/* TAB: IMPACTO */}
          {tab === "impact" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-               <ImpactCard label="Residuos Evitados" value={Number(data.impacto?.total_residuos_evitados?? 0).toString()} icon="🗑️" />
-               <ImpactCard label="CO₂ Evitado" value={`${Number(data.impacto?.total_co2_evitado ?? 0)} kg`} icon="♻️" />
-               <ImpactCard label="Energía Ahorrada" value={`${Number(data.impacto?.total_energia_ahorrada ?? 0)} kWh`} icon="⚡" />
-               <ImpactCard label="Agua Preservada" value={`${Number(data.impacto?.total_agua_preservada ?? 0)} L`} icon="💧" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+               <ImpactCard label="Residuos Evitados" value={Number(data.impacto?.total_residuos_evitados?? 0).toString()} unit="u" icon="🗑️" />
+               <ImpactCard label="CO₂ Evitado" value={Number(data.impacto?.total_co2_evitado ?? 0).toString()} unit="kg" icon="☁️" color="emerald" />
+               <ImpactCard label="Energía Ahorrada" value={Number(data.impacto?.total_energia_ahorrada ?? 0).toString()} unit="kWh" icon="⚡" color="amber" />
+               <ImpactCard label="Agua Preservada" value={Number(data.impacto?.total_agua_preservada ?? 0).toString()} unit="L" icon="💧" color="blue" />
             </div>
          )}
 
-         {/* Tab: RESEÑAS */}
+         {/* TAB: RESEÑAS */}
          {tab === "reviews" && (
-            <div className="space-y-4">
+            <div className="grid gap-5 md:grid-cols-2">
                {data.reviews && data.reviews.length > 0 ? (
                   data.reviews.map(r => (
-                     <div key={r.id} className="bg-white dark:bg-[#1a2e22] p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
+                     <div key={r.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex justify-between items-start mb-4">
                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-500">
+                              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 border border-gray-200">
                                  {r.autor_nombre?.charAt(0)}
                               </div>
                               <div>
-                                 <p className="font-bold text-gray-900 dark:text-gray-100 text-sm">{r.autor_nombre}</p>
+                                 <p className="font-bold text-gray-900 text-sm">{r.autor_nombre}</p>
                                  <p className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString()}</p>
                               </div>
                            </div>
-                           <div className="flex text-amber-400 text-sm">
-                              <Stars rating={r.calificacion} />
+                           <div className="flex text-amber-400">
+                              {[1,2,3,4,5].map(s => (
+                                 <Star key={s} size={14} className={s <= r.calificacion ? "fill-current" : "text-gray-200 fill-current"} />
+                              ))}
                            </div>
                         </div>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm pl-[52px]">"{r.comentario}"</p>
+                        <p className="text-gray-600 text-sm leading-relaxed italic">"{r.comentario}"</p>
                      </div>
                   ))
                ) : (
-                  <EmptyState msg="Aún no has recibido reseñas." />
+                  <EmptyState icon={<MessageSquare size={48}/>} msg="Aún no has recibido reseñas." sub="Completa intercambios para obtener calificaciones." />
                )}
             </div>
          )}
@@ -223,63 +329,51 @@ export default function Profile() {
   );
 }
 
-// --- SUBCOMPONENTES (Igual que antes) ---
-function KPICard({ value, label, icon, color }: { value: string; label: string; icon: string; color?: string }) {
-   return (
-      <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white dark:bg-[#1a2e22] border border-gray-200 dark:border-gray-700 shadow-sm">
-         <p className={`text-3xl font-bold ${color || 'text-gray-900 dark:text-white'}`}>{value}</p>
-         <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">
-            <span className="material-symbols-outlined text-lg">{icon}</span>
-            {label}
-         </div>
-      </div>
-   );
-}
+// --- SUBCOMPONENTES ---
 
-function TabButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function TabButton({ label, active, onClick, icon }: { label: string; active: boolean; onClick: () => void, icon?: React.ReactNode }) {
    return (
       <button
          onClick={onClick}
-         className={`flex-1 pb-4 pt-2 text-sm font-bold border-b-[3px] transition-colors whitespace-nowrap px-4 ${
+         className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
             active 
-            ? "border-[#2ecc71] text-[#2ecc71]" 
-            : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            ? "border-emerald-500 text-emerald-600 bg-emerald-50/50" 
+            : "border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50"
          }`}
       >
+         {icon}
          {label}
       </button>
    );
 }
 
-function ImpactCard({ label, value, icon }: any) {
+function ImpactCard({ label, value, unit, icon, color = "gray" }: any) {
+   const colors: any = {
+      emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
+      amber: "bg-amber-50 text-amber-600 border-amber-100",
+      blue: "bg-blue-50 text-blue-600 border-blue-100",
+      gray: "bg-gray-50 text-gray-600 border-gray-100"
+   };
+
    return (
-      <div className="bg-white dark:bg-[#1a2e22] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 flex items-center gap-4">
-         <div className="text-3xl">{icon}</div>
+      <div className={`p-6 rounded-2xl border ${colors[color]} flex items-center justify-between`}>
          <div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-            <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">{label}</p>
+            <p className="text-3xl font-bold mb-1">{value} <span className="text-sm font-medium opacity-60">{unit}</span></p>
+            <p className="text-xs font-bold uppercase tracking-wider opacity-70">{label}</p>
          </div>
+         <div className="text-3xl opacity-80 grayscale-30%">{icon}</div>
       </div>
    )
 }
 
-function Stars({ rating }: { rating: number }) {
+function EmptyState({ icon, msg, sub }: { icon: React.ReactNode, msg: string, sub?: string }) {
    return (
-     <div className="flex">
-       {[1, 2, 3, 4, 5].map((star) => (
-         <svg key={star} className={`w-4 h-4 ${star <= Math.round(rating) ? "fill-current" : "text-gray-300 dark:text-gray-600 fill-current"}`} viewBox="0 0 20 20">
-           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-         </svg>
-       ))}
-     </div>
-   );
- }
-
-function EmptyState({ msg }: { msg: string }) {
-   return (
-      <div className="col-span-full py-12 flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
-         <div className="text-4xl mb-2 opacity-50">📭</div>
-         <p className="text-gray-500">{msg}</p>
+      <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
+         <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mb-4">
+            {icon}
+         </div>
+         <p className="text-gray-900 font-semibold text-lg">{msg}</p>
+         {sub && <p className="text-gray-500 text-sm mt-1">{sub}</p>}
       </div>
    )
 }
