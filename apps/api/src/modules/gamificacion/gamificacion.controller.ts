@@ -1,73 +1,124 @@
 // apps/api/src/modules/gamificacion/gamificacion.controller.ts
-
 import { Request, Response } from "express";
-import * as svc from "./gamificacion.service";
+import * as GamificacionService from "./gamificacion.service";
 
-const num = (v: any) => (v !== undefined && v !== null ? Number(v) : null);
+// =========================
+// GET /usuarios/:usuarioId/resumen
+// =========================
+export async function getResumen(req: Request, res: Response) {
+  const usuarioId = Number(req.params.usuarioId);
 
-export const GamificacionController = {
-  // GET /usuarios/:id/puntos/resumen
-  resumenUsuario: async (req: Request, res: Response) => {
-    try {
-      const usuarioId = num(req.params.id);
-      if (!usuarioId) throw new Error("ID de usuario requerido");
+  if (!usuarioId || Number.isNaN(usuarioId)) {
+    return res
+      .status(400)
+      .json({ ok: false, message: "usuarioId inválido en la ruta" });
+  }
 
-      const data = await svc.resumenUsuario(usuarioId);
-      res.json({ ok: true, data });
-    } catch (e: any) {
-      console.error("[GamificacionController.resumenUsuario]", e);
-      res.status(400).json({ ok: false, error: e.message });
-    }
-  },
+  try {
+    const data = await GamificacionService.resumenUsuario(usuarioId);
+    return res.json({ ok: true, data });
+  } catch (e: any) {
+    console.error("[Gamificación] getResumen error:", e);
+    return res.status(500).json({ ok: false, message: e.message });
+  }
+}
 
-  // GET /usuarios/:id/puntos/historial?page=&pageSize=
-  historialUsuario: async (req: Request, res: Response) => {
-    try {
-      const usuarioId = num(req.params.id);
-      if (!usuarioId) throw new Error("ID de usuario requerido");
+// =========================
+// GET /usuarios/:usuarioId/historial
+// =========================
+export async function getHistorial(req: Request, res: Response) {
+  const usuarioId = Number(req.params.usuarioId);
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 20);
 
-      const page = num(req.query.page) || 1;
-      const pageSize = num(req.query.pageSize) || 20;
+  if (!usuarioId || Number.isNaN(usuarioId)) {
+    return res
+      .status(400)
+      .json({ ok: false, message: "usuarioId inválido en la ruta" });
+  }
 
-      const data = await svc.historialUsuario(usuarioId, { page, pageSize });
-      res.json({ ok: true, data });
-    } catch (e: any) {
-      console.error("[GamificacionController.historialUsuario]", e);
-      res.status(400).json({ ok: false, error: e.message });
-    }
-  },
+  try {
+    const data = await GamificacionService.historialUsuario(usuarioId, {
+      page,
+      pageSize,
+    });
+    return res.json({ ok: true, data });
+  } catch (e: any) {
+    console.error("[Gamificación] getHistorial error:", e);
+    return res.status(500).json({ ok: false, message: e.message });
+  }
+}
 
-  // GET /usuarios/:id/puntos/logros
-  logrosUsuario: async (req: Request, res: Response) => {
-    try {
-      const usuarioId = num(req.params.id);
-      if (!usuarioId) throw new Error("ID de usuario requerido");
+// =========================
+// GET /usuarios/:usuarioId/logros
+// =========================
+export async function getLogros(req: Request, res: Response) {
+  const usuarioId = Number(req.params.usuarioId);
 
-      const data = await svc.logrosUsuario(usuarioId);
-      res.json({ ok: true, data });
-    } catch (e: any) {
-      console.error("[GamificacionController.logrosUsuario]", e);
-      res.status(400).json({ ok: false, error: e.message });
-    }
-  },
+  if (!usuarioId || Number.isNaN(usuarioId)) {
+    return res
+      .status(400)
+      .json({ ok: false, message: "usuarioId inválido en la ruta" });
+  }
 
-  // GET /gamificacion/niveles
-listarNiveles: async (_req: Request, res: Response) => {
-    try {
-      const data = await svc.listarNiveles();
-      res.json({ ok: true, data });
-    } catch (e: any) {
-      res.status(400).json({ ok: false, error: e.message });
-    }
-  },
+  try {
+    const data = await GamificacionService.logrosUsuario(usuarioId);
+    return res.json({ ok: true, data });
+  } catch (e: any) {
+    console.error("[Gamificación] getLogros error:", e);
+    return res.status(500).json({ ok: false, message: e.message });
+  }
+}
 
-  listarAcciones: async (_req: Request, res: Response) => {
-    try {
-      const data = await svc.listarAcciones();
-      res.json({ ok: true, data });
-    } catch (e: any) {
-      res.status(400).json({ ok: false, error: e.message });
-    }
-  },
-};
+// =========================
+// GET /niveles
+// =========================
+export async function getNiveles(_req: Request, res: Response) {
+  try {
+    const data = await GamificacionService.listarNiveles();
+    return res.json({ ok: true, data });
+  } catch (e: any) {
+    console.error("[Gamificación] getNiveles error:", e);
+    return res.status(500).json({ ok: false, message: e.message });
+  }
+}
 
+// =========================
+// GET /acciones
+// =========================
+export async function getAcciones(_req: Request, res: Response) {
+  try {
+    const data = await GamificacionService.listarAcciones();
+    return res.json({ ok: true, data });
+  } catch (e: any) {
+    console.error("[Gamificación] getAcciones error:", e);
+    return res.status(500).json({ ok: false, message: e.message });
+  }
+}
+
+// =========================
+// POST /usuarios/:usuarioId/login-diario
+// (Reclamar recompensa diaria / registrar login)
+// =========================
+export async function registrarLoginDiario(req: Request, res: Response) {
+  const usuarioId = Number(req.params.usuarioId);
+
+  if (!usuarioId || Number.isNaN(usuarioId)) {
+    return res
+      .status(400)
+      .json({ ok: false, message: "usuarioId inválido en la ruta" });
+  }
+
+  try {
+    // Llama a la función que dispara la lógica de login diario
+    await GamificacionService.registrarLoginDiario(usuarioId);
+
+    // Devuelve el resumen actualizado después de reclamar la recompensa
+    const data = await GamificacionService.resumenUsuario(usuarioId);
+
+    return res.json({ ok: true, data });
+  } catch (e: any) {
+    console.error("[Gamificación] registrarLoginDiario error:", e);
+    return res.status(500).json({ ok: false, message: e.message });
+  }
+}

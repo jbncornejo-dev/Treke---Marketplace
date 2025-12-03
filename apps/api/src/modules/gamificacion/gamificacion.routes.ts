@@ -1,48 +1,51 @@
 // apps/api/src/modules/gamificacion/gamificacion.routes.ts
 import { Router } from "express";
-import { GamificacionController as C } from "./gamificacion.controller";
-import { authMiddleware, selfOrAdmin } from "../../middlewares/auth";
+import * as GamificacionController from "./gamificacion.controller";
+// import { requireAuth } from "../../middlewares/auth"; // si lo usas
 
-const r = Router();
+export const gamificacionRouter = Router();
 
-/**
- * Prefijo en app.ts:
- *   app.use("/api/gamificacion", r);
- */
+// Base sugerida en app principal:
+// app.use("/api/gamificacion", gamificacionRouter);
 
-// Rutas por usuario
-r.get(
-  "/usuarios/:id/resumen",
-  authMiddleware,
-  selfOrAdmin,
-  C.resumenUsuario
+// Resumen de puntos / nivel del usuario
+gamificacionRouter.get(
+  "/usuarios/:usuarioId/resumen",
+  // requireAuth,
+  GamificacionController.getResumen
 );
 
-r.get(
-  "/usuarios/:id/historial",
-  authMiddleware,
-  selfOrAdmin,
-  C.historialUsuario
+// Historial de puntos del usuario (paginado)
+gamificacionRouter.get(
+  "/usuarios/:usuarioId/historial",
+  // requireAuth,
+  GamificacionController.getHistorial
 );
 
-r.get(
-  "/usuarios/:id/logros",
-  authMiddleware,
-  selfOrAdmin,
-  C.logrosUsuario
+// Logros del usuario (acciones + stats)
+gamificacionRouter.get(
+  "/usuarios/:usuarioId/logros",
+  // requireAuth,
+  GamificacionController.getLogros
 );
 
-// 🔥 Rutas globales de catálogo (lo que te falta)
-r.get(
+// Listado global de niveles
+gamificacionRouter.get(
   "/niveles",
-  authMiddleware,
-  C.listarNiveles
+  // requireAuth,
+  GamificacionController.getNiveles
 );
 
-r.get(
+// Listado global de acciones que dan puntos
+gamificacionRouter.get(
   "/acciones",
-  authMiddleware,
-  C.listarAcciones
+  // requireAuth,
+  GamificacionController.getAcciones
 );
 
-export default r;
+// Reclamar / registrar login diario (recompensa diaria)
+gamificacionRouter.post(
+  "/usuarios/:usuarioId/login-diario",
+  // requireAuth,
+  GamificacionController.registrarLoginDiario
+);

@@ -72,7 +72,7 @@ export async function resumenUsuario(usuarioId: number) {
           : null,
         puntos_totales_historial: Number(totales.puntos_totales ?? 0),
         puntos_ultimos_30d: Number(ult30.puntos_ultimos_30d ?? 0),
-        puntos_para_siguiente: puntosParaSiguiente, // 👈 aquí el fix
+        puntos_para_siguiente: puntosParaSiguiente,
       };
     }
 
@@ -117,7 +117,7 @@ export async function resumenUsuario(usuarioId: number) {
         : null,
       puntos_totales_historial: Number(totales.puntos_totales ?? 0),
       puntos_ultimos_30d: Number(ult30.puntos_ultimos_30d ?? 0),
-      puntos_para_siguiente: puntosParaSiguiente, // 👈 aquí también
+      puntos_para_siguiente: puntosParaSiguiente,
     };
   });
 }
@@ -169,7 +169,6 @@ export async function logrosUsuario(usuarioId: number) {
 // 4) LISTADOS GLOBALES (Niveles / Acciones)
 // =========================
 
-
 export async function listarNiveles() {
   return withTx(async (client) => {
     const result = await client.query(GamificacionSQL.listNiveles);
@@ -184,3 +183,13 @@ export async function listarAcciones() {
   });
 }
 
+// =========================
+// 5) LOGIN DIARIO / RECOMPENSA DIARIA
+// (usa tu función SQL fn_gam_registrar_login)
+// =========================
+
+export async function registrarLoginDiario(usuarioId: number) {
+  return withTx(async (client) => {
+    await client.query(`SELECT fn_gam_registrar_login($1)`, [usuarioId]);
+  });
+}

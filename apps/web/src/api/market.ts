@@ -22,13 +22,14 @@ export async function getFactoresEcologicos(): Promise<FactorEcologico[]> {
   return (r as any).data ?? (r as any);
 }
 */
+
 export type ReviewItem = {
   id: number;
   calificacion: number;
-  comentario: string;
+  comentario: string | null;
   created_at: string;
   autor_nombre: string;
-  autor_foto?: string;
+  autor_foto?: string | null;
 };
 
 export type MarketItem = {
@@ -42,7 +43,7 @@ export type MarketItem = {
   usuario_id: number;
   categoria_id: number;
   estado_id: number;
-  
+
   // Datos enriquecidos (JOINs)
   categoria: string;
   categoria_color?: string; // Nuevo del SQL
@@ -73,15 +74,14 @@ export async function list(opts: {
   offset?: number;
 }): Promise<MarketListResp> {
   const p = new URLSearchParams();
-  
+
   if (opts.q) p.set("q", opts.q);
   if (opts.categoria_id != null) p.set("categoria_id", String(opts.categoria_id));
   if (opts.min_cred != null) p.set("min_cred", String(opts.min_cred));
   if (opts.max_cred != null) p.set("max_cred", String(opts.max_cred));
   if (opts.estado_id != null) p.set("estado_id", String(opts.estado_id));
-  
+
   // lat, lng y radio_km ya no se envían
-  
   p.set("sort", opts.sort || "recent");
   p.set("limit", String(opts.limit ?? 12));
   p.set("offset", String(opts.offset ?? 0));
@@ -97,8 +97,8 @@ export type MarketDetail = MarketItem & {
   total_propuestas: number;
   is_fav: boolean;
   vendedor_email: string;
-  
-  // 👇 NUEVO CAMPO
+
+  // 👇 NUEVO CAMPO: reseñas del vendedor
   reviews: ReviewItem[];
 };
 
@@ -140,9 +140,9 @@ export type CrearPublicacionPayload = {
   peso_aprox_kg?: number | null;
   categoria_id: number;
   estado_id?: number | null;
-  factor_ids: number[]; 
-  sin_impacto: boolean; 
-  fotos: string[]; 
+  factor_ids: number[];
+  sin_impacto: boolean;
+  fotos: string[];
 };
 
 export async function crearPublicacion(payload: CrearPublicacionPayload) {
@@ -159,11 +159,13 @@ export async function crearPublicacion(payload: CrearPublicacionPayload) {
 
 // 4. Catálogos: Rutas ajustadas para apuntar a MarketController
 // Antes tenías /api/catalogo/..., pero tu controller está en /api/market/...
-export async function getCategorias(): Promise<Array<{ id: number; nombre: string; icono?: string; color?: string }>> {
+export async function getCategorias(): Promise<
+  Array<{ id: number; nombre: string; icono?: string; color?: string }>
+> {
   const r = await api.get<{
     ok: boolean;
     data: Array<{ id: number; nombre: string; icono?: string; color?: string }>;
-  }>("/api/market/categorias"); 
+  }>("/api/market/categorias");
   return (r as any).data ?? (r as any);
 }
 
@@ -180,7 +182,7 @@ export async function getEstadosPublicacion(): Promise<
 // Upload con axios
 export async function uploadMarketImages(files: File[]): Promise<string[]> {
   const form = new FormData();
-  files.forEach((file) => form.append("images", file)); 
+  files.forEach((file) => form.append("images", file));
 
   const r = await api.post<{ ok: boolean; data: string[] }>(
     "/api/market/upload-images",
