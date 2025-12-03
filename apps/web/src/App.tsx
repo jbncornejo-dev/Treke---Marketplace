@@ -16,6 +16,10 @@ import UserReportsPage from "./pages/reports/UserReportsPage";
 import AdminReportsPage from "./pages/reports/AdminReportsPage";
 import AdminAdsPage from "./pages/admin/AdminAdsPage";
 
+import UserPublicProfilePage from "./pages/profile/UserPublicProfilePage";
+
+// ...
+
 
 import SettingsPage from "./pages/profile/SettingsPage";
 
@@ -131,7 +135,7 @@ export default function App() {
             </AdminRoute>
           } />
           <Route path="/perfil/gamificacion" element={<GamificacionProfile />} />
-          
+          <Route path="/perfil/:usuarioId" element={<UserPublicProfilePage />} />
           <Route path="/admin/anuncios" element={
                <AdminRoute>
           <AdminAdsPage />

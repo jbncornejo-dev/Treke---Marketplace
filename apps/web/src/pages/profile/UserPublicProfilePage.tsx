@@ -1,4 +1,3 @@
-// apps/web/src/pages/profile/UserPublicProfilePage.tsx
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -211,7 +210,7 @@ export default function UserPublicProfilePage() {
                 </span>
               </div>
 
-              {/* usamos perfil_created_at como "miembro desde" */}
+              {/* En lugar de ubicacion_texto usamos perfil_created_at */}
               {p.perfil_created_at && (
                 <div className="flex items-center gap-1 text-gray-500">
                   <Clock size={14} />
@@ -239,7 +238,7 @@ export default function UserPublicProfilePage() {
 
         {/* CONTENIDO PRINCIPAL: PUBLICACIONES + RESEÑAS */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* PUBLICACIONES (2/3) */}
+          {/* PUBLICACIONES (ocupa 2/3) */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -450,7 +449,7 @@ export default function UserPublicProfilePage() {
   );
 }
 
-// Skeleton de carga
+// Skeleton de carga similar al del market
 function ProfileSkeleton() {
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6 animate-pulse">

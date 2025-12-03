@@ -10,8 +10,12 @@ import intercambiosRoutes from "./modules/intercambios/intercambios.routes";
 import adminReportRouter from "./modules/reports_admin/reports_admin.routes";
 import  {userReportRouter}  from "./modules/report-user/userReport.routes";
 import anunciosRoutes from "./modules/anuncios/anuncios.routes";
-import gamificacionRouter from "./modules/gamificacion/gamificacion.routes";
 import reseniasRoutes from './modules/resenias/resenias.routes';
+import {gamificacionRouter} from "./modules/gamificacion/gamificacion.routes";
+
+
+import profilePublicRoutes from "./modules/profile-public/profilePublic.routes";
+
 
 
 
@@ -31,6 +35,7 @@ app.use("/api/user/reportes", userReportRouter);
 app.use("/api", anunciosRoutes);
 app.use("/api/gamificacion", gamificacionRouter);
 app.use('/api/resenias', reseniasRoutes);
+app.use("/api/profiles", profilePublicRoutes);
 
 // 🔹 Archivos estáticos (fotos de publicaciones, etc.)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
