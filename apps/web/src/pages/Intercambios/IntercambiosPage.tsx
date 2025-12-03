@@ -10,8 +10,8 @@ import {
   Send, 
   User, 
   AlertTriangle,
-  MoreVertical,
-  Loader2
+  Loader2,
+  Star // 👈 Importado para el botón de reseña
 } from "lucide-react";
 
 import { 
@@ -28,6 +28,9 @@ import {
   type Mensaje
 } from "../../api/intercambios";
 import { getCurrentUserId } from "../../api/market";
+
+// 👇 Importamos el modal de reseña (Asegúrate de haberlo creado en components)
+import CreateReviewModal from "../../components/CreateReviewModal";
 
 type Tab = "recibidas" | "enviadas" | "intercambios";
 
@@ -46,6 +49,9 @@ export default function IntercambiosPage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatPropuestaId, setChatPropuestaId] = useState<number | null>(null);
   const [chatTitle, setChatTitle] = useState("");
+
+  // 👇 Estado para controlar a quién se está calificando
+  const [reviewTarget, setReviewTarget] = useState<number | null>(null);
 
   useEffect(() => {
     const uid = getCurrentUserId();
@@ -146,6 +152,8 @@ export default function IntercambiosPage() {
                             currentUserId={currentUserId!} 
                             onAction={handleIntercambioAction}
                             onChat={() => openChat(item.propuesta_aceptada_id, item.titulo, item.estado)}
+                            // 👇 Pasamos la función para abrir el modal
+                            onReview={(targetId: number) => setReviewTarget(targetId)}
                         />
                     ))}
 
@@ -174,6 +182,15 @@ export default function IntercambiosPage() {
             onClose={() => setChatOpen(false)} 
         />
       )}
+
+      {/* 👇 MODAL DE RESEÑAS */}
+      {reviewTarget && (
+        <CreateReviewModal 
+            targetUserId={reviewTarget} 
+            onClose={() => setReviewTarget(null)} 
+        />
+      )}
+
     </div>
   );
 }
@@ -203,7 +220,6 @@ function PropuestaCard({ data, isReceived, onAction, onChat }: any) {
 
     return (
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-            {/* Indicador lateral de estado */}
             <div className={`absolute left-0 top-0 bottom-0 w-1 ${isPending ? 'bg-amber-400' : 'bg-gray-200'}`} />
 
             <div className="flex justify-between items-start mb-2 pl-2">
@@ -221,7 +237,6 @@ function PropuestaCard({ data, isReceived, onAction, onChat }: any) {
                 </div>
             </div>
 
-            {/* Acciones */}
             <div className="flex gap-2 mt-4 pl-2">
                 <button 
                     onClick={onChat} 
@@ -253,11 +268,14 @@ function PropuestaCard({ data, isReceived, onAction, onChat }: any) {
 }
 
 // --- 3. TARJETA DE INTERCAMBIO (ACTIVO) ---
-function IntercambioCard({ data, currentUserId, onAction, onChat}: any) {
+function IntercambioCard({ data, currentUserId, onAction, onChat, onReview }: any) {
     const soyComprador = data.comprador_id === currentUserId;
     const confirmadoPorMi = soyComprador ? data.confirm_comprador : data.confirm_vendedor;
     const confirmadoPorOtro = soyComprador ? data.confirm_vendedor : data.confirm_comprador;
     
+    // 👇 Calculamos el ID del otro usuario para la reseña
+    const otroUsuarioId = soyComprador ? data.vendedor_id : data.comprador_id;
+
     const isCompleted = data.estado === 'completado';
     const isActive = data.estado === 'activo';
 
@@ -294,18 +312,13 @@ function IntercambioCard({ data, currentUserId, onAction, onChat}: any) {
                     <div className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-100">
                         <p className="text-xs font-bold text-gray-400 uppercase mb-3 text-center">Estado de Confirmación</p>
                         <div className="flex items-center justify-between relative">
-                            {/* Línea conectora */}
                             <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -z-10" />
-                            
-                            {/* Paso 1: Tú */}
                             <div className="flex flex-col items-center bg-gray-50 px-2">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${confirmadoPorMi ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-gray-300 text-gray-300'}`}>
                                     {confirmadoPorMi ? <CheckCircle2 size={16} /> : "1"}
                                 </div>
                                 <span className="text-[10px] font-bold mt-1 text-gray-600">Tú</span>
                             </div>
-
-                            {/* Paso 2: Contraparte */}
                             <div className="flex flex-col items-center bg-gray-50 px-2">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${confirmadoPorOtro ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-gray-300 text-gray-300'}`}>
                                     {confirmadoPorOtro ? <CheckCircle2 size={16} /> : "2"}
@@ -341,11 +354,21 @@ function IntercambioCard({ data, currentUserId, onAction, onChat}: any) {
                             <button 
                                 onClick={() => onAction(data.id, 'cancelar')}
                                 className="p-3 bg-white border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 rounded-xl transition-all"
-                                title="Cancelar Intercambio"
                             >
                                 <AlertTriangle size={20} />
                             </button>
                         </>
+                    )}
+
+                    {/* 👇 BOTÓN DE CALIFICAR (Solo si completado) */}
+                    {isCompleted && (
+                        <button 
+                            onClick={() => onReview(otroUsuarioId)}
+                            className="flex-1 py-3 bg-amber-50 text-amber-600 font-bold rounded-xl border border-amber-100 hover:bg-amber-100 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Star size={18} className="fill-amber-600" />
+                            Calificar Usuario
+                        </button>
                     )}
                 </div>
             </div>
@@ -353,7 +376,7 @@ function IntercambioCard({ data, currentUserId, onAction, onChat}: any) {
     )
 }
 
-// --- 4. CHAT MODAL (Estilo WhatsApp/Messenger) ---
+// --- 4. CHAT MODAL ---
 function ChatModal({ propuestaId, currentUserId, title, onClose, estado }: any) {
     const [msgs, setMsgs] = useState<Mensaje[]>([]);
     const [txt, setTxt] = useState("");
@@ -386,8 +409,6 @@ function ChatModal({ propuestaId, currentUserId, title, onClose, estado }: any) 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4 sm:p-6">
             <div className="bg-white w-full max-w-md h-[85vh] rounded-3xl flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                
-                {/* Header Chat */}
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white z-10">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
@@ -398,34 +419,19 @@ function ChatModal({ propuestaId, currentUserId, title, onClose, estado }: any) 
                             <p className="text-xs text-emerald-600 font-medium">En línea</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
-                        <MoreVertical size={20} />
-                    </button>
-                    <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center md:hidden">
-                        ✖
-                    </button>
+                    <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400">✖</button>
                 </div>
-                
-                {/* Mensajes Area */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#efeae2] bg-opacity-30">
-                     {/* Aviso de estado */}
                      {isDisabled && (
                         <div className="flex justify-center my-4">
-                            <span className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">
-                                Chat cerrado ({estado})
-                            </span>
+                            <span className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">Chat cerrado ({estado})</span>
                         </div>
                      )}
-
                     {msgs.map(m => {
                         const esMio = m.remitente_id === currentUserId;
                         return (
                             <div key={m.id} className={`flex ${esMio ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm shadow-sm relative group ${
-                                    esMio 
-                                    ? 'bg-emerald-600 text-white rounded-tr-sm' 
-                                    : 'bg-white text-gray-800 rounded-tl-sm border border-gray-100'
-                                }`}>
+                                <div className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm shadow-sm relative group ${esMio ? 'bg-emerald-600 text-white rounded-tr-sm' : 'bg-white text-gray-800 rounded-tl-sm border border-gray-100'}`}>
                                     {m.contenido}
                                     <div className={`text-[9px] mt-1 text-right opacity-70 ${esMio ? 'text-emerald-50' : 'text-gray-400'}`}>
                                         {new Date(m.fecha_envio).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -436,27 +442,10 @@ function ChatModal({ propuestaId, currentUserId, title, onClose, estado }: any) 
                     })}
                     <div ref={bottomRef} />
                 </div>
-
-                {/* Input Area */}
                 <div className="p-3 bg-white border-t border-gray-100">
                     <div className="flex items-end gap-2 bg-gray-100 rounded-24px px-2 py-2">
-                         <input 
-                            className="flex-1 bg-transparent border-none focus:ring-0 text-sm max-h-32 px-3 py-2 outline-none"
-                            placeholder={isDisabled ? "Chat deshabilitado" : "Escribe un mensaje..."}
-                            value={txt}
-                            onChange={e => setTxt(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && send()}
-                            disabled={isDisabled}
-                        />
-                        <button 
-                            onClick={send} 
-                            disabled={isDisabled || !txt.trim()}
-                            className={`p-2 rounded-full mb-0.5 transition-all ${
-                                !txt.trim() || isDisabled 
-                                ? 'bg-gray-300 text-white cursor-default' 
-                                : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transform hover:scale-105'
-                            }`}
-                        >
+                         <input className="flex-1 bg-transparent border-none focus:ring-0 text-sm max-h-32 px-3 py-2 outline-none" placeholder={isDisabled ? "Chat deshabilitado" : "Escribe un mensaje..."} value={txt} onChange={e => setTxt(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} disabled={isDisabled} />
+                        <button onClick={send} disabled={isDisabled || !txt.trim()} className={`p-2 rounded-full mb-0.5 transition-all ${!txt.trim() || isDisabled ? 'bg-gray-300 text-white cursor-default' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transform hover:scale-105'}`}>
                             <Send size={18} className={!txt.trim() ? "" : "ml-0.5"} />
                         </button>
                     </div>
@@ -473,12 +462,9 @@ function EmptyState({ tab }: { tab: string }) {
         intercambios: { icon: Clock, text: "No tienes intercambios activos." }
     };
     const Info = data[tab] || data.recibidas;
-
     return (
         <div className="flex flex-col items-center justify-center py-20 opacity-60">
-            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 mb-4">
-                <Info.icon size={32} />
-            </div>
+            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 mb-4"><Info.icon size={32} /></div>
             <p className="text-gray-500 font-medium">{Info.text}</p>
         </div>
     )
