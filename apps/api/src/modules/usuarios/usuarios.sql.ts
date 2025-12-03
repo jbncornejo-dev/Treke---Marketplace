@@ -237,8 +237,6 @@ export const SQL = {
       AND pub.deleted_at IS NULL
     ORDER BY lf.created_at DESC
     LIMIT 20
-  `
-
-  
+  ` 
 };
 

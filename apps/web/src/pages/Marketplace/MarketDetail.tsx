@@ -1,5 +1,20 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom"; // Usamos useParams es más seguro
+import {
+  ArrowLeft,
+  Heart,
+  Share2,
+  MapPin,
+  ShieldCheck,
+  Star,
+  Sparkles,
+  Package,
+  Clock,
+  Send,
+  Loader2,
+  AlertCircle
+} from "lucide-react";
+
 import {
   detail,
   toggleFav,
@@ -12,18 +27,25 @@ const uid = getCurrentUserId();
 
 export default function MarketDetailPage() {
   const navigate = useNavigate();
-  const id = Number(window.location.pathname.split("/").pop());
+  // 1. Mejor forma de obtener ID con React Router (si tienes configurada la ruta /market/:id)
+  // Si no, mantenemos tu lógica de window.location como fallback
+  const params = useParams(); 
+  const idFromUrl = Number(window.location.pathname.split("/").pop());
+  const id = params.id ? Number(params.id) : idFromUrl;
+
   const [data, setData] = useState<MarketDetail | null>(null);
+  const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState("");
-  const [mainImage, setMainImage] = useState<string>(""); // Para cambiar foto principal
+  const [mainImage, setMainImage] = useState<string>(""); 
 
   // Estados Modal
   const [showProposalModal, setShowProposalModal] = useState(false);
-  const [offerAmount, setOfferAmount] = useState<string>("");
   const [offerMessage, setOfferMessage] = useState<string>("");
   const [loadingProp, setLoadingProp] = useState(false);
 
+  // --- CARGA DE DATOS ---
   async function load() {
+    setLoading(true);
     setMsg("");
     try {
       const d = await detail(id);
@@ -32,19 +54,26 @@ export default function MarketDetailPage() {
       const principal = d.fotos.find(f => f.es_principal) || d.fotos[0];
       if (principal) setMainImage(principal.foto_url);
     } catch (e: any) {
-      setMsg(e?.message || "No se pudo cargar");
+      setMsg(e?.message || "No se pudo cargar el producto.");
+    } finally {
+      setLoading(false);
     }
   }
 
   useEffect(() => { load(); }, []);
 
+  // --- ACCIONES ---
   async function onToggleFav() {
     if (!data) return;
+    // Optimistic UI update (actualiza visualmente antes de la API)
+    const newState = !data.is_fav;
+    setData({ ...data, is_fav: newState });
+    
     try {
-      await toggleFav(data.id, !data.is_fav);
-      setData({ ...data, is_fav: !data.is_fav });
+      await toggleFav(data.id, newState);
     } catch (e: any) {
-      alert(e?.message || "Error al actualizar favorito");
+      setData({ ...data, is_fav: !newState }); // Revertir si falla
+      alert("Error al actualizar favorito"); // Podrías usar un Toast aquí
     }
   }
 
@@ -52,246 +81,313 @@ export default function MarketDetailPage() {
     if (!data) return;
     if (!uid) return alert("Inicia sesión para continuar");
     if (uid === data.usuario_id) return alert("No puedes ofertar en tu propia publicación");
-
-    setOfferAmount(String(data.valor_creditos));
     setOfferMessage("");
     setShowProposalModal(true);
   }
 
   async function enviarPropuesta() {
     if (!data) return;
-
-    // ❌ ELIMINAR ESTO: Ya no validamos monto manual
-    /*
-    const monto = Number(offerAmount);
-    if (!Number.isFinite(monto) || monto <= 0) return alert("Monto inválido");
-    */
-
     setLoadingProp(true);
     try {
-      // ✅ CORREGIDO: Llamamos solo con ID y Mensaje
-      // El backend tomará el precio automáticamente de la base de datos
       await iniciarPropuesta(data.id, offerMessage || undefined);
-      
       setShowProposalModal(false);
-      alert("¡Propuesta enviada correctamente!");
-      
-      // Limpiar mensaje opcional si quieres
-      // setOfferMessage(""); 
-      
+      // Aquí idealmente mostrarías un Toast de éxito o redirigirías al chat
+      alert("¡Propuesta enviada correctamente! Revisa tus intercambios.");
       load(); 
     } catch (e: any) {
       alert(e?.message || "Error al enviar propuesta");
     } finally {
       setLoadingProp(false);
     }
-}
+  }
 
+  // --- RENDERIZADO ---
+
+  // 1. Loading State (Skeleton)
+  if (loading) return <DetailSkeleton />;
+
+  // 2. Error State
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f6f8f7] dark:bg-[#112117] text-gray-500">
-        {msg ? msg : <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#2ecc71] border-t-transparent"/>}
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-500 gap-4">
+        <AlertCircle size={48} className="text-gray-300" />
+        <p>{msg || "Producto no encontrado"}</p>
+        <button onClick={() => navigate(-1)} className="text-emerald-600 font-medium hover:underline">Volver atrás</button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f8f7] dark:bg-[#112117] text-[#333] dark:text-[#f5f5f5] font-sans pb-20">
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-20 selection:bg-emerald-100">
       
-      {/* --- HEADER SIMPLE --- */}
-      <div className="sticky top-0 z-20 flex items-center px-4 py-3 bg-[#f6f8f7]/90 dark:bg-[#112117]/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-        </button>
-        <h1 className="ml-2 text-lg font-bold truncate">{data.titulo}</h1>
+      {/* --- HEADER STICKY --- */}
+      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3 shadow-sm transition-all">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <button 
+                onClick={() => navigate(-1)} 
+                className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-600 transition-colors group"
+            >
+                <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            </button>
+            
+            {/* Título en header solo aparece si scrolleamos (opcional, aquí simple) */}
+            <span className="font-semibold text-gray-900 truncate max-w-[200px] md:max-w-md opacity-0 md:opacity-100 transition-opacity">
+                {data.titulo}
+            </span>
+
+            <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600 transition-colors" title="Compartir">
+                <Share2 size={20} />
+            </button>
+        </div>
       </div>
 
-      <main className="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="max-w-6xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         
-        {/* COLUMNA IZQUIERDA: FOTOS */}
+        {/* --- COLUMNA IZQUIERDA: GALERÍA --- */}
         <div className="lg:col-span-7 space-y-4">
-          {/* Foto Principal */}
-          <div className="aspect-square w-full bg-gray-200 dark:bg-gray-800 rounded-3xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700 relative group">
+          
+          {/* Imagen Principal */}
+          <div className="relative aspect-4/3 w-full bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 group">
              {mainImage ? (
-               <img src={mainImage} alt={data.titulo} className="w-full h-full object-cover" />
+               <img src={mainImage} alt={data.titulo} className="w-full h-full object-cover transition-transform duration-500" />
              ) : (
-               <div className="w-full h-full flex items-center justify-center text-gray-400">Sin fotos</div>
+               <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-100">
+                   <Package size={48} strokeWidth={1.5} />
+               </div>
              )}
              
              {/* Botón Favorito Flotante */}
              <button 
                onClick={onToggleFav}
-               className="absolute top-4 right-4 p-3 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur hover:bg-white dark:hover:bg-black/70 transition-all shadow-sm"
+               className="absolute top-4 right-4 p-3 rounded-full bg-white/90 backdrop-blur shadow-sm hover:scale-110 transition-all z-10"
              >
-                <svg className={`w-6 h-6 ${data.is_fav ? "text-red-500 fill-current" : "text-gray-600 dark:text-gray-300"}`} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
+                <Heart 
+                    size={24} 
+                    className={data.is_fav ? "fill-red-500 text-red-500" : "text-gray-400 hover:text-gray-600"} 
+                />
              </button>
           </div>
 
-          {/* Galería Miniaturas */}
+          {/* Miniaturas */}
           {data.fotos.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+            <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar px-1">
               {data.fotos.map(f => (
                 <button 
                   key={f.id} 
                   onClick={() => setMainImage(f.foto_url)}
-                  className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 ${mainImage === f.foto_url ? "border-[#2ecc71]" : "border-transparent"}`}
+                  className={`relative shrink-0 w-20 h-20 rounded-xl overflow-hidden transition-all ${
+                      mainImage === f.foto_url 
+                      ? "ring-2 ring-emerald-500 ring-offset-2 opacity-100" 
+                      : "opacity-70 hover:opacity-100 border border-transparent hover:border-gray-300"
+                  }`}
                 >
-                  <img src={f.foto_url} className="w-full h-full object-cover" />
+                  <img src={f.foto_url} className="w-full h-full object-cover" alt="thumbnail" />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* COLUMNA DERECHA: INFO */}
-        <div className="lg:col-span-5 space-y-6">
+        {/* --- COLUMNA DERECHA: INFO Y ACCIÓN --- */}
+        <div className="lg:col-span-5 flex flex-col gap-6">
           
-          {/* Info Principal */}
+          {/* Header Producto */}
           <div>
-            <div className="flex items-start justify-between gap-4">
-               <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight">{data.titulo}</h2>
+            <div className="flex flex-wrap gap-2 mb-3">
+               <Badge color="emerald">{data.categoria}</Badge>
+               <Badge color="gray">{data.estado_nombre}</Badge>
+               {data.peso_aprox_kg > 0 && <Badge color="gray">{data.peso_aprox_kg} kg</Badge>}
             </div>
-            <div className="mt-2 flex items-center gap-2 text-[#2ecc71] text-2xl font-bold">
-               {data.valor_creditos} <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">créditos</span>
+
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-2">
+                {data.titulo}
+            </h1>
+            
+            <div className="flex items-center gap-2 text-gray-500 text-sm mb-6">
+                <MapPin size={16} />
+                {data.ubicacion_texto || "Ubicación no especificada"}
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-               <Badge>{data.categoria}</Badge>
-               <Badge>{data.estado_nombre}</Badge>
-               {data.peso_aprox_kg > 0 && <Badge>{data.peso_aprox_kg} kg</Badge>}
+
+            {/* Precio Destacado */}
+            <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 p-4 rounded-2xl">
+               <div className="p-2 bg-amber-100 rounded-full text-amber-600">
+                   <Sparkles size={24} />
+               </div>
+               <div>
+                   <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Valor</p>
+                   <p className="text-3xl font-extrabold text-gray-900 leading-none">
+                       {data.valor_creditos} <span className="text-lg font-medium text-gray-500">Créditos</span>
+                   </p>
+               </div>
             </div>
           </div>
 
-          {/* Descripción */}
-          <div className="bg-white dark:bg-[#1a2e22] p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
-             <h3 className="font-bold text-sm text-gray-400 mb-2 uppercase tracking-wider">Descripción</h3>
-             <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">
-               {data.descripcion}
-             </p>
-             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center gap-2 text-sm text-gray-500">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                {data.ubicacion_texto}
-             </div>
-          </div>
-
-          {/* Tarjeta de Vendedor */}
-          <div className="bg-white dark:bg-[#1a2e22] p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
-             <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xl font-bold text-gray-500 overflow-hidden">
-                   {/* Avatar o Inicial */}
-                   {data.vendedor_nombre?.charAt(0) || "U"}
+          {/* Tarjeta Vendedor */}
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+             <div className="flex items-center gap-4">
+                <div className="relative">
+                    <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-xl font-bold text-emerald-700">
+                        {data.vendedor_nombre?.charAt(0) || "U"}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full">
+                        <ShieldCheck size={16} className="text-emerald-500 fill-emerald-100" />
+                    </div>
                 </div>
                 <div>
-                   <p className="font-bold text-gray-900 dark:text-gray-100">
-                      {data.vendedor_nombre || "Usuario Treke"}
+                   <p className="text-sm text-gray-500">Publicado por</p>
+                   <p className="font-bold text-gray-900 text-lg leading-tight">
+                      {data.vendedor_nombre || "Usuario"}
                    </p>
-                   <div className="flex items-center gap-1 text-sm text-amber-400">
-                      <span className="font-bold text-gray-700 dark:text-gray-300 mr-1">
-                        {Number(data.vendedor_rating || 0).toFixed(1)}
-                      </span>
-                      <Stars rating={Number(data.vendedor_rating || 0)} />
+                   <div className="flex items-center gap-1 text-sm mt-0.5">
+                      <Star size={14} className="text-amber-400 fill-amber-400" />
+                      <span className="font-semibold">{Number(data.vendedor_rating || 0).toFixed(1)}</span>
+                      <span className="text-gray-400 text-xs">(Rating)</span>
                    </div>
                 </div>
              </div>
-             {/* Botón de contacto o Perfil (Opcional) */}
-             <button className="text-sm text-[#2ecc71] font-medium hover:underline">Ver perfil</button>
+             <button className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                 Ver Perfil
+             </button>
           </div>
 
-          {/* Botón de Acción Principal */}
-          <button 
-            onClick={abrirModalPropuesta}
-            className="w-full py-4 rounded-2xl bg-[#2ecc71] hover:bg-[#27ae60] text-white font-bold text-lg shadow-lg shadow-green-500/20 hover:scale-[1.02] transition-all"
-          >
-             Iniciar Intercambio
-          </button>
+          {/* Descripción */}
+          <div className="prose prose-sm text-gray-600">
+             <h3 className="text-gray-900 font-semibold text-lg mb-2">Descripción</h3>
+             <p className="whitespace-pre-line leading-relaxed">
+               {data.descripcion}
+             </p>
+          </div>
 
-          <p className="text-center text-xs text-gray-400">
-             {data.total_propuestas} personas ya han ofertado
-          </p>
+          {/* Botón CTA Fijo en Móvil (Bottom Bar) o Normal en Desktop */}
+          <div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t border-gray-100 lg:static lg:border-none lg:bg-transparent lg:p-0 z-20">
+             <button 
+               onClick={abrirModalPropuesta}
+               className="w-full py-4 rounded-xl bg-gray-900 hover:bg-emerald-600 text-white font-bold text-lg shadow-xl shadow-gray-200 lg:shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 group"
+             >
+                <span>Ofertar {data.valor_creditos} Créditos</span>
+                <Send size={20} className="group-hover:translate-x-1 transition-transform" />
+             </button>
+             <p className="text-center text-xs text-gray-400 mt-2 lg:hidden">
+                {data.total_propuestas} personas interesadas
+             </p>
+          </div>
 
         </div>
 
-        {/* SECCIÓN DE RESEÑAS (Full Width abajo) */}
-        <div className="col-span-1 lg:col-span-12 mt-8">
-           <h3 className="text-xl font-bold mb-4 px-1">Reseñas del Vendedor</h3>
+        {/* --- SECCIÓN INFERIOR: RESEÑAS --- */}
+        <div className="col-span-1 lg:col-span-12 pt-8 border-t border-gray-200">
+           <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+               Reseñas del Vendedor <span className="text-gray-400 text-sm font-normal">({data.reviews?.length || 0})</span>
+           </h3>
            
            {data.reviews && data.reviews.length > 0 ? (
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {data.reviews.map((rev) => (
-                  <div key={rev.id} className="bg-white dark:bg-[#1a2e22] p-4 rounded-2xl border border-gray-200 dark:border-gray-700">
-                     <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs font-bold">
-                           {rev.autor_nombre?.charAt(0)}
+             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+               {data.reviews.map((rev) => (
+                 <div key={rev.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                     <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                           <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
+                              {rev.autor_nombre?.charAt(0)}
+                           </div>
+                           <span className="text-sm font-semibold text-gray-900">{rev.autor_nombre}</span>
                         </div>
-                        <span className="text-sm font-semibold">{rev.autor_nombre}</span>
-                        <div className="flex text-amber-400 text-xs ml-auto">
-                           <Stars rating={rev.calificacion} />
+                        <div className="flex text-amber-400">
+                           {/* Render simple de estrellas */}
+                           {Array.from({ length: 5 }).map((_, i) => (
+                               <Star key={i} size={12} className={i < rev.calificacion ? "fill-current" : "text-gray-200"} />
+                           ))}
                         </div>
                      </div>
-                     <p className="text-sm text-gray-600 dark:text-gray-300 leading-snug">
-                        "{rev.comentario}"
-                     </p>
-                     <p className="text-xs text-gray-400 mt-3">
+                     <p className="text-sm text-gray-600 leading-relaxed italic">"{rev.comentario}"</p>
+                     <div className="mt-3 flex items-center gap-1 text-xs text-gray-400">
+                        <Clock size={12} />
                         {new Date(rev.created_at).toLocaleDateString()}
-                     </p>
-                  </div>
-                ))}
+                     </div>
+                 </div>
+               ))}
              </div>
            ) : (
-             <div className="text-center py-8 bg-gray-100 dark:bg-white/5 rounded-2xl text-gray-500">
-                Este usuario aún no tiene reseñas.
+             <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                <p className="text-gray-400 font-medium">Este usuario aún no tiene reseñas.</p>
              </div>
            )}
         </div>
 
       </main>
 
-      {/* MODAL DE PROPUESTA */}
+      {/* --- MODAL DE PROPUESTA (Backdrop Blur) --- */}
       {showProposalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md bg-white dark:bg-[#1a2e22] rounded-3xl p-6 shadow-2xl border border-gray-200 dark:border-gray-700 animate-fade-in-up">
-            <h3 className="text-xl font-bold mb-1">Realizar Oferta</h3>
-            <p className="text-sm text-gray-500 mb-4">Ofrece tus créditos por "{data.titulo}"</p>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" 
+            onClick={() => setShowProposalModal(false)}
+          />
+
+          {/* Modal Content */}
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-300">
+            
+            {/* Header Modal */}
+            <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-600">
+                    <Sparkles size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">Confirmar Oferta</h3>
+                <p className="text-gray-500 text-sm mt-1">Estás a un paso de iniciar el trueque.</p>
+            </div>
 
             <div className="space-y-4">
-              {/* ✅ CAMBIAR POR ESTO */}
-              <div className="bg-gray-100 p-3 rounded-lg mb-4">
-                <p className="text-sm text-gray-500">Valor del intercambio:</p>
-                <p className="text-xl font-bold text-[#2ecc71]">
-                  {data.valor_creditos} Créditos
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  * El valor es fijo.
-                </p>
+              {/* Resumen del Costo */}
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex items-center justify-between">
+                <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase">Vas a ofrecer</p>
+                    <p className="text-sm font-medium text-gray-700">{data.titulo}</p>
+                </div>
+                <div className="text-right">
+                    <p className="text-2xl font-bold text-emerald-600">{data.valor_creditos}</p>
+                    <p className="text-[10px] text-emerald-600/70 font-bold uppercase">Créditos</p>
+                </div>
               </div>
+
+              {/* Mensaje */}
               <div>
-                <label className="block text-sm font-medium mb-1">Mensaje (Opcional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Mensaje para {data.vendedor_nombre} (Opcional)</label>
                 <textarea
                   rows={3}
-                  className="w-full p-4 rounded-xl bg-gray-100 dark:bg-black/20 border-none focus:ring-2 focus:ring-[#2ecc71] resize-none"
-                  placeholder="Hola, me interesa tu producto..."
+                  className="w-full p-4 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none resize-none transition-all text-sm"
+                  placeholder="¡Hola! Me interesa mucho, ¿está disponible para hoy?"
                   value={offerMessage}
                   onChange={(e) => setOfferMessage(e.target.value)}
                 />
               </div>
             </div>
 
-            <div className="flex gap-3 mt-6">
+            <div className="grid grid-cols-2 gap-3 mt-8">
               <button 
                 onClick={() => setShowProposalModal(false)}
-                className="flex-1 h-12 rounded-xl border border-gray-300 dark:border-gray-600 font-medium hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                className="py-3.5 rounded-xl border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
               <button 
                 onClick={enviarPropuesta}
                 disabled={loadingProp}
-                className="flex-1 h-12 rounded-xl bg-[#2ecc71] hover:bg-[#27ae60] text-white font-bold shadow-lg shadow-green-500/20 transition-all disabled:opacity-50"
+                className="py-3.5 rounded-xl bg-gray-900 hover:bg-emerald-600 text-white font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
               >
-                {loadingProp ? "Enviando..." : "Confirmar"}
+                {loadingProp ? (
+                    <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Procesando...
+                    </>
+                ) : (
+                    "Confirmar Oferta"
+                )}
               </button>
             </div>
+            
+            <p className="text-center text-xs text-gray-400 mt-4">
+                Al confirmar, se notificará al vendedor inmediatamente.
+            </p>
           </div>
         </div>
       )}
@@ -300,29 +396,39 @@ export default function MarketDetailPage() {
   );
 }
 
-// --- SUBCOMPONENTES VISUALES ---
+// --- SUBCOMPONENTES ---
 
-function Badge({ children }: { children: React.ReactNode }) {
+function Badge({ children, color = "gray" }: { children: React.ReactNode, color?: "gray" | "emerald" }) {
+  const styles = {
+      gray: "bg-gray-100 text-gray-600 border-gray-200",
+      emerald: "bg-emerald-50 text-emerald-700 border-emerald-100"
+  };
+  
   return (
-    <span className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-white/10 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-transparent">
+    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${styles[color]}`}>
       {children}
     </span>
   );
 }
 
-function Stars({ rating }: { rating: number }) {
-  // Genera array [1, 2, 3, 4, 5]
-  return (
-    <div className="flex">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <svg 
-          key={star}
-          className={`w-3 h-3 ${star <= Math.round(rating) ? "text-amber-400 fill-current" : "text-gray-300 dark:text-gray-600 fill-current"}`} 
-          viewBox="0 0 20 20"
-        >
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-        </svg>
-      ))}
-    </div>
-  );
+// Skeleton para carga
+function DetailSkeleton() {
+    return (
+        <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pulse">
+            <div className="lg:col-span-7 space-y-4">
+                <div className="aspect-4/3 bg-gray-200 rounded-3xl" />
+                <div className="flex gap-3">
+                    <div className="w-20 h-20 bg-gray-200 rounded-xl" />
+                    <div className="w-20 h-20 bg-gray-200 rounded-xl" />
+                </div>
+            </div>
+            <div className="lg:col-span-5 space-y-6">
+                <div className="h-8 bg-gray-200 rounded w-3/4" />
+                <div className="h-6 bg-gray-200 rounded w-1/4" />
+                <div className="h-24 bg-gray-200 rounded-2xl" />
+                <div className="h-20 bg-gray-200 rounded-2xl" />
+                <div className="h-14 bg-gray-200 rounded-xl mt-auto" />
+            </div>
+        </div>
+    );
 }

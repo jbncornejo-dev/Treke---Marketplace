@@ -1,5 +1,5 @@
 // src/components/Reportes/KPICard.tsx
-import React from "react";
+
 
 type KPICardProps = {
   label: string;

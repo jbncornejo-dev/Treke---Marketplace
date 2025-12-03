@@ -1,6 +1,17 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import * as AuthApi from "../../api/auth";
+import { 
+  Leaf, 
+  User, 
+  Mail, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  ArrowRight, 
+  Loader2,
+  Check
+} from 'lucide-react';
 
 export type RegisterValues = {
   email: string;
@@ -23,7 +34,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  // --- LÓGICA DE PERSISTENCIA (Traída de Auth.tsx) ---
+  // --- LÓGICA DE PERSISTENCIA (INTACTA) ---
   function persistSession(resp: any) {
     const user =
       resp?.user ??
@@ -37,6 +48,7 @@ export default function Register() {
   }
   // ---------------------------------------------------
 
+  // Validaciones
   const canSend =
     values.email.includes("@") &&
     values.full_name.trim().length >= 3 &&
@@ -55,7 +67,7 @@ export default function Register() {
       await AuthApi.register(values);
       setMsg({ type: "ok", text: "¡Cuenta creada! Iniciando sesión..." });
 
-      // 2. Auto-Login
+      // 2. Auto-Login (UX fluida)
       const r = await AuthApi.login({ email: values.email, password: values.password });
 
       // 3. Persistencia
@@ -64,96 +76,192 @@ export default function Register() {
       // 4. Redirección
       setTimeout(() => {
         navigate("/market", { replace: true });
-      }, 1000);
+      }, 1500); // Un poco más de tiempo para celebrar el registro
 
     } catch (err: any) {
       console.error("Register error:", err);
       setMsg({
         type: "err",
-        text: err?.message || "Error al registrar. Intenta otro email.",
+        text: err?.message || "Error al registrar. Intenta con otro correo.",
       });
-    } finally {
-      setLoading(false);
+      setLoading(false); // Solo quitamos loading si falla, si es éxito esperamos la redirección
     }
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#f6f8f7] dark:bg-[#112117] transition-colors px-4 py-10 font-sans">
-      <div className="w-full max-w-[480px] mx-auto">
-        <div className="text-center mb-8 animate-fade-in-up">
-          <div className="inline-flex items-center justify-center p-3 bg-[#2ecc71]/10 rounded-2xl mb-4">
-            <svg className="w-10 h-10 text-[#2ecc71]" fill="currentColor" viewBox="0 0 24 24">
-               <path d="M17,8C8,10,5.9,16.17,3.82,21.34L5.71,22l1-2.3A4.49,4.49,0,0,0,8,20C19,20,22,3,22,3,21,5,14,5.25,9,6.25S2,11.5,2,13.5a6.22,6.22,0,0,0,1.75,3.75C7,13,15,7,17,8Z"/>
-            </svg>
-          </div>
-          <h1 className="text-[#112117] dark:text-white text-3xl font-bold tracking-tight">Crea tu cuenta</h1>
-          <p className="text-[#638872] dark:text-gray-400 text-base mt-2">Únete a la comunidad de trueque sostenible</p>
+    <div className="min-h-screen flex bg-white font-sans text-gray-900">
+      
+      {/* --- COLUMNA IZQUIERDA: FORMULARIO --- */}
+      <div className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-20 xl:px-24 relative z-10 py-10">
+        
+        {/* Logo */}
+        <div className="absolute top-8 left-8 sm:left-12">
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="bg-emerald-600 w-8 h-8 rounded-full flex items-center justify-center text-white transition-transform group-hover:scale-110">
+               <Leaf size={16} fill="currentColor" />
+            </div>
+            <span className="font-semibold tracking-tight text-xl">Treke.</span>
+          </Link>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full">
-          <label className="flex flex-col gap-2">
-            <span className="text-[#112117] dark:text-gray-200 font-medium ml-1">Nombre Completo</span>
-            <input
-              type="text"
-              placeholder="Ej. Alex Guzmán"
-              value={values.full_name}
-              onChange={(e) => setValues((s) => ({ ...s, full_name: e.target.value }))}
-              className="w-full h-14 px-4 rounded-xl bg-white dark:bg-[#1a2e22] border border-[#dce5df] dark:border-gray-700 text-[#112117] dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#2ecc71] focus:ring-1 focus:ring-[#2ecc71] transition-all"
-            />
-          </label>
+        <div className="w-full max-w-md mx-auto mt-12 sm:mt-0">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-3">
+              Únete a la comunidad
+            </h1>
+            <p className="text-gray-500">
+              Crea tu cuenta gratis y empieza a intercambiar hoy mismo.
+            </p>
+          </div>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-[#112117] dark:text-gray-200 font-medium ml-1">Correo Electrónico</span>
-            <input
-              type="email"
-              placeholder="tu@email.com"
-              value={values.email}
-              onChange={(e) => setValues((s) => ({ ...s, email: e.target.value }))}
-              className="w-full h-14 px-4 rounded-xl bg-white dark:bg-[#1a2e22] border border-[#dce5df] dark:border-gray-700 text-[#112117] dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#2ecc71] focus:ring-1 focus:ring-[#2ecc71] transition-all"
-            />
-          </label>
-
-          <label className="flex flex-col gap-2">
-            <span className="text-[#112117] dark:text-gray-200 font-medium ml-1">Contraseña</span>
-            <div className="relative flex items-center">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Mínimo 6 caracteres"
-                value={values.password}
-                onChange={(e) => setValues((s) => ({ ...s, password: e.target.value }))}
-                className="w-full h-14 pl-4 pr-12 rounded-xl bg-white dark:bg-[#1a2e22] border border-[#dce5df] dark:border-gray-700 text-[#112117] dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#2ecc71] focus:ring-1 focus:ring-[#2ecc71] transition-all"
-              />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 text-gray-400 hover:text-[#2ecc71] transition-colors">
-                {showPassword ? <span className="text-sm font-semibold">Ocultar</span> : <span className="text-sm font-semibold">Ver</span>}
-              </button>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            
+            {/* Input Nombre */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 ml-1">Nombre Completo</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-600 transition-colors">
+                  <User size={18} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Ej. Alex Guzmán"
+                  value={values.full_name}
+                  onChange={(e) => setValues((s) => ({ ...s, full_name: e.target.value }))}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all duration-200"
+                />
+              </div>
             </div>
-          </label>
 
-          <label className="flex items-center gap-3 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={values.acepta_terminos}
-              onChange={(e) => setValues((s) => ({ ...s, acepta_terminos: e.target.checked }))}
-              className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-[#dce5df] dark:border-gray-600 bg-white dark:bg-[#1a2e22] checked:border-[#2ecc71] checked:bg-[#2ecc71] transition-all"
-            />
-            <span className="text-sm text-[#638872] dark:text-gray-400 group-hover:text-[#2ecc71] transition-colors">Acepto los términos y condiciones</span>
-          </label>
-
-          {msg && (
-            <div className={`p-3 rounded-lg text-sm font-medium text-center ${msg.type === 'ok' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-              {msg.text}
+            {/* Input Email */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 ml-1">Correo Electrónico</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-600 transition-colors">
+                  <Mail size={18} />
+                </div>
+                <input
+                  type="email"
+                  placeholder="hola@ejemplo.com"
+                  value={values.email}
+                  onChange={(e) => setValues((s) => ({ ...s, email: e.target.value }))}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all duration-200"
+                />
+              </div>
             </div>
-          )}
 
-          <button disabled={!canSend || loading} className="w-full h-12 mt-2 rounded-xl bg-[#2ecc71] hover:bg-[#27ae60] text-white font-bold text-lg tracking-wide shadow-lg hover:shadow-green-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:shadow-none transition-all duration-300">
-            {loading ? "Registrando..." : "Crear Cuenta"}
-          </button>
-        </form>
+            {/* Input Password */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 ml-1">Contraseña</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-600 transition-colors">
+                  <Lock size={18} />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Mínimo 6 caracteres"
+                  value={values.password}
+                  onChange={(e) => setValues((s) => ({ ...s, password: e.target.value }))}
+                  className="w-full pl-10 pr-12 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all duration-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
 
-        <p className="text-center mt-8 text-sm text-[#638872] dark:text-gray-400">
-           ¿Ya tienes una cuenta? <Link to="/login" className="font-bold text-[#2ecc71] hover:underline">Inicia Sesión</Link>
-        </p>
+            {/* Checkbox Términos */}
+            <div className="pt-2">
+                <label className="flex items-start gap-3 cursor-pointer group select-none">
+                    <div className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-all duration-200 ${values.acepta_terminos ? 'bg-emerald-600 border-emerald-600' : 'bg-white border-gray-300 group-hover:border-emerald-500'}`}>
+                        {values.acepta_terminos && <Check size={14} className="text-white" strokeWidth={3} />}
+                    </div>
+                    <input 
+                        type="checkbox" 
+                        className="hidden" 
+                        checked={values.acepta_terminos} 
+                        onChange={(e) => setValues((s) => ({ ...s, acepta_terminos: e.target.checked }))} 
+                    />
+                    <span className="text-sm text-gray-500 leading-tight">
+                        Acepto los <a href="#" className="text-emerald-600 hover:underline font-medium">Términos de Servicio</a> y la <a href="#" className="text-emerald-600 hover:underline font-medium">Política de Privacidad</a>.
+                    </span>
+                </label>
+            </div>
+
+            {/* Mensajes de Estado */}
+            {msg && (
+              <div className={`p-4 rounded-xl flex items-center gap-3 text-sm font-medium animate-in fade-in slide-in-from-top-2 ${
+                msg.type === 'ok' 
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                  : 'bg-red-50 text-red-700 border border-red-100'
+              }`}>
+                {msg.type === 'ok' ? <Leaf size={16} /> : <div className="w-1.5 h-1.5 rounded-full bg-red-500" />}
+                {msg.text}
+              </div>
+            )}
+
+            {/* Botón Submit */}
+            <button
+              disabled={!canSend || loading}
+              className="w-full py-3.5 rounded-xl bg-gray-900 hover:bg-emerald-600 text-white font-medium text-base transition-all duration-300 shadow-lg shadow-gray-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 group"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Creando cuenta...
+                </>
+              ) : (
+                <>
+                  Registrarse
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </button>
+
+          </form>
+
+          <p className="text-center mt-8 text-sm text-gray-500">
+            ¿Ya tienes cuenta?{" "}
+            <Link to="/login" className="font-semibold text-emerald-600 hover:text-emerald-700 hover:underline transition-colors">
+              Iniciar Sesión
+            </Link>
+          </p>
+        </div>
       </div>
+
+      {/* --- COLUMNA DERECHA: IMAGEN (Desktop) --- */}
+      <div className="hidden lg:block lg:w-1/2 relative bg-emerald-50">
+         <div className="absolute inset-0 w-full h-full">
+            {/* Imagen de comunidad/gente intercambiando */}
+            <img 
+               src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2671&auto=format&fit=crop" 
+               alt="Community working together" 
+               className="w-full h-full object-cover grayscale-0 transition-all hover:scale-105 duration-[20s]"
+            />
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-emerald-900/20 mix-blend-multiply" />
+            <div className="absolute inset-0 bg-linear-to-t from-gray-900/60 via-transparent to-transparent" />
+         </div>
+
+         {/* Contenido sobre la imagen */}
+         <div className="absolute bottom-12 left-12 right-12 text-white">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md border border-emerald-400/30 text-emerald-50 text-xs font-semibold tracking-wide mb-4">
+               <User size={12} fill="currentColor" />
+               ÚNETE AL CAMBIO
+            </div>
+            <h2 className="text-4xl font-bold leading-tight mb-4 drop-shadow-lg">
+               Tu basura es el<br/>tesoro de otro.
+            </h2>
+            <p className="text-lg text-gray-100 max-w-md drop-shadow-md">
+               Forma parte de la primera red social dedicada exclusivamente a la economía circular y el trueque justo.
+            </p>
+         </div>
+      </div>
+
     </div>
   );
 }
