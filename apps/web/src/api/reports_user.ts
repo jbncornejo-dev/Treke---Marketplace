@@ -121,6 +121,36 @@ export type UserDashboardResponse = {
   suscripcion_resumen?: UserSuscripcionResumen | null;
 };
 
+
+export type UserCreditosMes = {
+  usuario_id: number;
+  periodo_mes: string; // date ISO
+  periodo_label: string; // 'YYYY-MM'
+  creditos_ingresados: number;
+  creditos_gastados: number;
+  balance_neto: number;
+};
+
+/** Series de intercambios por mes (vw_user_intercambios_por_mes) */
+export type UserIntercambiosMes = {
+  usuario_id: number;
+  periodo_mes: string;
+  periodo_label: string;
+  total_intercambios: number;
+  intercambios_como_comprador: number;
+  intercambios_como_vendedor: number;
+  intercambios_completados: number;
+  intercambios_pendientes: number;
+};
+
+/** Series de puntos por mes (vw_user_puntos_por_mes) */
+export type UserPuntosMes = {
+  usuario_id: number;
+  periodo_mes: string;
+  periodo_label: string;
+  puntos_mes: number;
+};
+
 /* =========================================================
  * 4) Funciones de API
  * ========================================================= */
@@ -196,6 +226,34 @@ export async function getTopRankingPuntaje(
 ): Promise<UserRankingTopPuntaje[]> {
   const r = await api.get<UserRankingTopPuntaje[]>(
     `${userReportsBase}/ranking/top-puntaje?limit=${limit}`
+  );
+  return (r as any).data ?? (r as any);
+}
+export async function getUserCreditosSeries(
+  usuarioId: number
+): Promise<UserCreditosMes[]> {
+  const r = await api.get<UserCreditosMes[]>(
+    `${userReportsBase}/${usuarioId}/series/creditos`
+  );
+  return (r as any).data ?? (r as any);
+}
+
+/** Intercambios por mes para el usuario */
+export async function getUserIntercambiosSeries(
+  usuarioId: number
+): Promise<UserIntercambiosMes[]> {
+  const r = await api.get<UserIntercambiosMes[]>(
+    `${userReportsBase}/${usuarioId}/series/intercambios`
+  );
+  return (r as any).data ?? (r as any);
+}
+
+/** Puntos por mes para el usuario (gamificación) */
+export async function getUserPuntosSeries(
+  usuarioId: number
+): Promise<UserPuntosMes[]> {
+  const r = await api.get<UserPuntosMes[]>(
+    `${userReportsBase}/${usuarioId}/series/puntos`
   );
   return (r as any).data ?? (r as any);
 }

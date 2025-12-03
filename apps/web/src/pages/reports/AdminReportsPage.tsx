@@ -6,7 +6,6 @@ import {
   getComunidad,
   getPublicaciones,
   getMonetizacion,
-  getMonetizacionHistorico, // NUEVO
   getImpacto,
   getIntercambios,
 } from "../../api/reports_admin";
@@ -16,7 +15,6 @@ import type {
   ComunidadResponse,
   PublicacionesResponse,
   MonetizacionResponse,
-  MonetizacionHistoricoResponse, // NUEVO
   ImpactoResponse,
   IntercambiosResponse,
 } from "../../api/reports_admin";
@@ -39,21 +37,10 @@ export default function AdminReportsPage() {
 
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [comunidad, setComunidad] = useState<ComunidadResponse | null>(null);
-  const [publicaciones, setPublicaciones] =
-    useState<PublicacionesResponse | null>(null);
-  const [monetizacion, setMonetizacion] =
-    useState<MonetizacionResponse | null>(null);
+  const [publicaciones, setPublicaciones] = useState<PublicacionesResponse | null>(null);
+  const [monetizacion, setMonetizacion] = useState<MonetizacionResponse | null>(null);
   const [impacto, setImpacto] = useState<ImpactoResponse | null>(null);
-  const [intercambios, setIntercambios] =
-    useState<IntercambiosResponse | null>(null);
-
-  // NUEVO: estado para histórico de monetización y modo
-  const [monetizacionHistorico, setMonetizacionHistorico] =
-    useState<MonetizacionHistoricoResponse | null>(null);
-  const [monetizacionModo, setMonetizacionModo] =
-    useState<"reciente" | "historico">("reciente");
-  const [loadingMonHist, setLoadingMonHist] = useState(false);
-  const [errorMonHist, setErrorMonHist] = useState<string | null>(null);
+  const [intercambios, setIntercambios] = useState<IntercambiosResponse | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +55,7 @@ export default function AdminReportsPage() {
           getDashboard(),
           getComunidad(),
           getPublicaciones(),
-          getMonetizacion(), // solo modo "reciente"
+          getMonetizacion(),
           getImpacto(),
           getIntercambios(),
         ]);
@@ -133,62 +120,63 @@ export default function AdminReportsPage() {
       {/* Contenido por tab */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {/* ============== DASHBOARD ============== */}
-        {activeTab === "Dashboard" &&
-          dashboard &&
-          (() => {
-            // dashboard puede venir como { resumen: {...} } o directamente como {...}
-            const raw = dashboard as any;
-            const resumen = raw?.resumen ?? raw;
+{activeTab === "Dashboard" && dashboard && (() => {
+  // dashboard puede venir como { resumen: {...} } o directamente como {...}
+  const raw = dashboard as any;
+  const resumen = raw?.resumen ?? raw;
 
-            if (!resumen) {
-              return (
-                <SectionCard title="Resumen general">
-                  <div className="text-xs text-neutral-400">
-                    Sin datos de dashboard disponibles.
-                  </div>
-                </SectionCard>
-              );
-            }
+  if (!resumen) {
+    return (
+      <SectionCard title="Resumen general">
+        <div className="text-xs text-neutral-400">
+          Sin datos de dashboard disponibles.
+        </div>
+      </SectionCard>
+    );
+  }
 
-            return (
-              <SectionCard title="Resumen general">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <KPI
-                    label="Ingresos totales (Bs)"
-                    value={resumen.ingresos_total_bs}
-                  />
-                  <KPI
-                    label="Créditos vendidos"
-                    value={resumen.creditos_vendidos_total}
-                  />
-                  <KPI
-                    label="Usuarios registrados"
-                    value={resumen.usuarios_registrados}
-                  />
-                  <KPI
-                    label="Usuarios activos"
-                    value={resumen.usuarios_activos}
-                  />
-                  <KPI
-                    label="Intercambios completados"
-                    value={resumen.intercambios_completados}
-                  />
-                  <KPI
-                    label="CO₂ evitado (kg)"
-                    value={resumen.impacto_total_co2_kg}
-                  />
-                  <KPI
-                    label="Energía ahorrada (kWh)"
-                    value={resumen.impacto_total_energia_kwh}
-                  />
-                  <KPI
-                    label="Agua preservada (L)"
-                    value={resumen.impacto_total_agua_l}
-                  />
-                </div>
-              </SectionCard>
-            );
-          })()}
+  return (
+    <SectionCard title="Resumen general">
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <KPI
+          label="Ingresos totales (Bs)"
+          value={resumen.ingresos_total_bs}
+        />
+        <KPI
+          label="Créditos vendidos"
+          value={resumen.creditos_vendidos_total}
+        />
+        <KPI
+          label="Usuarios registrados"
+          value={resumen.usuarios_registrados}
+        />
+        <KPI
+          label="Usuarios activos"
+          value={resumen.usuarios_activos}
+        />
+        <KPI
+          label="Intercambios completados"
+          value={resumen.intercambios_completados}
+        />
+        <KPI
+          label="CO₂ evitado (kg)"
+          value={resumen.impacto_total_co2_kg}
+        />
+        <KPI
+          label="Energía ahorrada (kWh)"
+          value={resumen.impacto_total_energia_kwh}
+        />
+        <KPI
+          label="Agua preservada (L)"
+          value={resumen.impacto_total_agua_l}
+        />
+      </div>
+    </SectionCard>
+  );
+})()}
+
+
+
 
         {/* ============== COMUNIDAD ============== */}
         {activeTab === "Comunidad" && comunidad && (
@@ -273,13 +261,7 @@ export default function AdminReportsPage() {
 
             <SectionCard title="Ranking participación (TOP 10)">
               <SimpleTable
-                headers={[
-                  "#",
-                  "Usuario",
-                  "Puntaje",
-                  "Intercambios",
-                  "Compras créditos",
-                ]}
+                headers={["#", "Usuario", "Puntaje", "Intercambios", "Compras créditos"]}
                 rows={(comunidad.ranking_participacion ?? []).map((r) => [
                   r.ranking,
                   r.full_name ?? r.email,
@@ -331,9 +313,7 @@ export default function AdminReportsPage() {
                 />
                 <KPI
                   label="Activas &gt; 90 días"
-                  value={
-                    publicaciones.resumen.publicaciones_activas_mas_90d
-                  }
+                  value={publicaciones.resumen.publicaciones_activas_mas_90d}
                 />
               </div>
             </SectionCard>
@@ -365,7 +345,7 @@ export default function AdminReportsPage() {
                 headers={["Ubicación", "Total publicaciones"]}
                 rows={(publicaciones.por_ubicacion ?? []).map((r) => [
                   r.ubicacion_texto,
-                  r.total_publicaciones ?? r.total_publicaciones,
+                  r.total_publicaciones ?? r.total_publicaciones, // por si cambiaste nombre
                 ])}
               />
             </SectionCard>
@@ -388,349 +368,254 @@ export default function AdminReportsPage() {
         )}
 
         {/* ============== MONETIZACIÓN ============== */}
-        {activeTab === "Monetización" &&
-          monetizacion &&
-          (() => {
-            const raw = monetizacion as any;
+{activeTab === "Monetización" && monetizacion && (() => {
+  const raw = monetizacion as any;
 
-            // Puede venir como { resumen_totales: {...} } o parecido
-            const resumen =
-              raw?.resumen_totales ?? raw?.resumen ?? raw;
+  // Puede venir como { resumen_totales: {...} } o parecido
+  const resumen =
+    raw?.resumen_totales ??
+    raw?.resumen ??
+    raw;
 
-            const usuariosPagadores = raw?.usuarios_pagadores_resumen ?? raw?.usuarios_pagadores;
-            const ingresosPorFuente = raw?.ingresos_por_fuente ?? [];
-            const rankingGasto = raw?.ranking_usuarios_gasto_total ?? raw?.ranking_gasto_total ?? [];
-            const ingresosDia = raw?.ingresos_dia ?? [];
-            const ingresosSemana = raw?.ingresos_semana ?? [];
-            const ingresosMes = raw?.ingresos_mes ?? [];
-            const ingresosAnio = raw?.ingresos_anio ?? [];
-            const inflacionMensual = raw?.inflacion_creditos_mensual ?? raw?.inflacion_mensual ?? [];
-            const creditosGanVsComp =
-              raw?.creditos_ganados_vs_comprados ?? [];
-            const rankingCreditosAcum =
-              raw?.ranking_usuarios_creditos_acumulados ??
-              raw?.ranking_creditos_acumulados ??
-              [];
+  const usuariosPagadores = raw?.usuarios_pagadores;
+  const ingresosPorFuente = raw?.ingresos_por_fuente ?? [];
+  const rankingGasto = raw?.ranking_gasto_total ?? [];
+  const ingresosDia = raw?.ingresos_dia ?? [];
+  const ingresosSemana = raw?.ingresos_semana ?? [];
+  const ingresosMes = raw?.ingresos_mes ?? [];
+  const ingresosAnio = raw?.ingresos_anio ?? [];
+  const inflacionMensual = raw?.inflacion_mensual ?? [];
+  const creditosGanVsComp = raw?.creditos_ganados_vs_comprados ?? [];
+  const rankingCreditosAcum = raw?.ranking_creditos_acumulados ?? [];
 
-            // NUEVO: elegir dataset según modo
-            const isHistorico = monetizacionModo === "historico";
-            const ingresosDiaToShow = isHistorico
-              ? monetizacionHistorico?.ingresos_dia_historico ?? ingresosDia
-              : ingresosDia;
-            const ingresosSemanaToShow = isHistorico
-              ? monetizacionHistorico?.ingresos_semana_historico ??
-                ingresosSemana
-              : ingresosSemana;
+  if (!resumen) {
+    return (
+      <SectionCard title="Resumen monetización">
+        <div className="text-xs text-neutral-400">
+          Sin datos de monetización disponibles.
+        </div>
+      </SectionCard>
+    );
+  }
 
-            if (!resumen) {
-              return (
-                <SectionCard title="Resumen monetización">
-                  <div className="text-xs text-neutral-400">
-                    Sin datos de monetización disponibles.
-                  </div>
-                </SectionCard>
-              );
-            }
+  return (
+    <>
+      {/* 1) Ingresos totales + créditos vendidos totales */}
+      <SectionCard title="Resumen monetización">
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <KPI
+            label="Ingresos totales (Bs)"
+            value={resumen.ingresos_total_bs}
+          />
+          <KPI
+            label="Créditos vendidos totales"
+            value={resumen.creditos_vendidos_creditos}
+          />
+          <KPI
+            label="Ingresos por planes (Bs)"
+            value={resumen.ingresos_bs_planes}
+          />
+          <KPI
+            label="Ingresos por anuncios (Bs)"
+            value={resumen.ingresos_bs_anuncios}
+          />
+        </div>
+      </SectionCard>
 
-            return (
-              <>
-                {/* NUEVO: Toggle de modo reciente / histórico */}
-                <SectionCard title="Modo de visualización">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-xs text-neutral-400">
-                      {monetizacionModo === "reciente"
-                        ? "Mostrando ingresos por día (última semana) e ingresos por semana (último mes)."
-                        : "Mostrando histórico completo de ingresos por día y por semana."}
-                    </div>
-                    <div className="inline-flex rounded-full bg-neutral-800 p-1 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => setMonetizacionModo("reciente")}
-                        className={[
-                          "rounded-full px-3 py-1 transition",
-                          monetizacionModo === "reciente"
-                            ? "bg-emerald-500 text-neutral-900"
-                            : "text-neutral-200",
-                        ].join(" ")}
-                      >
-                        Reciente
-                      </button>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          // si ya lo tenemos en memoria, no volvemos a pedirlo
-                          if (monetizacionHistorico) {
-                            setMonetizacionModo("historico");
-                            return;
-                          }
-                          try {
-                            setLoadingMonHist(true);
-                            setErrorMonHist(null);
-                            const data = await getMonetizacionHistorico();
-                            setMonetizacionHistorico(data);
-                            setMonetizacionModo("historico");
-                          } catch (e: any) {
-                            console.error(
-                              "Error cargando monetización histórica:",
-                              e
-                            );
-                            setErrorMonHist(
-                              e?.message ?? "Error cargando histórico"
-                            );
-                          } finally {
-                            setLoadingMonHist(false);
-                          }
-                        }}
-                        disabled={loadingMonHist}
-                        className={[
-                          "rounded-full px-3 py-1 transition",
-                          monetizacionModo === "historico"
-                            ? "bg-emerald-500 text-neutral-900"
-                            : "text-neutral-200",
-                          loadingMonHist ? "opacity-60" : "",
-                        ].join(" ")}
-                      >
-                        {loadingMonHist ? "Cargando..." : "Histórico"}
-                      </button>
-                    </div>
-                  </div>
-                  {errorMonHist && (
-                    <p className="mt-2 text-xs text-red-400">
-                      {errorMonHist}
-                    </p>
-                  )}
-                </SectionCard>
+      {/* 2) Usuarios con al menos una compra vs sin pago */}
+      <SectionCard title="Usuarios pagadores vs usuarios sin pago">
+        {usuariosPagadores ? (
+          <SimpleTable
+            headers={["Total usuarios", "Pagadores", "Sin pago"]}
+            rows={[
+              [
+                usuariosPagadores.total_usuarios,
+                usuariosPagadores.usuarios_pagadores,
+                usuariosPagadores.usuarios_sin_pago,
+              ],
+            ]}
+          />
+        ) : (
+          <div className="text-xs text-neutral-400">
+            Sin datos de usuarios pagadores.
+          </div>
+        )}
+      </SectionCard>
 
-                {/* 1) Ingresos totales + créditos vendidos totales */}
-                <SectionCard title="Resumen monetización">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <KPI
-                      label="Ingresos totales (Bs)"
-                      value={resumen.ingresos_total_bs}
-                    />
-                    <KPI
-                      label="Créditos vendidos totales"
-                      value={resumen.creditos_vendidos_creditos}
-                    />
-                    <KPI
-                      label="Ingresos por planes (Bs)"
-                      value={resumen.ingresos_bs_planes}
-                    />
-                    <KPI
-                      label="Ingresos por anuncios (Bs)"
-                      value={resumen.ingresos_bs_anuncios}
-                    />
-                  </div>
-                </SectionCard>
+      {/* 3) Ingresos por créditos vs planes vs anuncios */}
+      <SectionCard title="Ingresos por fuente (créditos / planes / anuncios)">
+        <SimpleTable
+          headers={["Fuente", "Ingresos (Bs)", "Créditos"]}
+          rows={ingresosPorFuente.map((r: any) => [
+            r.fuente,
+            r.ingresos_total_bs,
+            r.creditos_totales,
+          ])}
+        />
+      </SectionCard>
 
-                {/* 2) Usuarios con al menos una compra vs sin pago */}
-                <SectionCard title="Usuarios pagadores vs usuarios sin pago">
-                  {usuariosPagadores ? (
-                    <SimpleTable
-                      headers={[
-                        "Total usuarios",
-                        "Pagadores",
-                        "Sin pago",
-                      ]}
-                      rows={[
-                        [
-                          usuariosPagadores.total_usuarios,
-                          usuariosPagadores.usuarios_pagadores,
-                          usuariosPagadores.usuarios_sin_pago,
-                        ],
-                      ]}
-                    />
-                  ) : (
-                    <div className="text-xs text-neutral-400">
-                      Sin datos de usuarios pagadores.
-                    </div>
-                  )}
-                </SectionCard>
+      {/* 4) Ingresos por día */}
+      <SectionCard title="Ingresos por día">
+        <SimpleTable
+          headers={[
+            "Fecha",
+            "Total (Bs)",
+            "Créditos (Bs)",
+            "Planes (Bs)",
+            "Anuncios (Bs)",
+          ]}
+          rows={ingresosDia.map((r: any) => [
+            r.fecha_dia,
+            r.ingresos_total_bs,
+            r.ingresos_bs_creditos,
+            r.ingresos_bs_planes,
+            r.ingresos_bs_anuncios,
+          ])}
+        />
+      </SectionCard>
 
-                {/* 3) Ingresos por créditos vs planes vs anuncios */}
-                <SectionCard title="Ingresos por fuente (créditos / planes / anuncios)">
-                  <SimpleTable
-                    headers={["Fuente", "Ingresos (Bs)", "Créditos"]}
-                    rows={ingresosPorFuente.map((r: any) => [
-                      r.fuente,
-                      r.ingresos_total_bs,
-                      r.creditos_totales,
-                    ])}
-                  />
-                </SectionCard>
+      {/* 5) Ingresos por semana */}
+      <SectionCard title="Ingresos por semana">
+        <SimpleTable
+          headers={[
+            "Semana",
+            "Fecha inicio",
+            "Total (Bs)",
+            "Créditos (Bs)",
+            "Planes (Bs)",
+            "Anuncios (Bs)",
+          ]}
+          rows={ingresosSemana.map((r: any) => [
+            `${r.anio_iso}-W${r.semana_iso}`,
+            r.semana_inicio,
+            r.ingresos_total_bs,
+            r.ingresos_bs_creditos,
+            r.ingresos_bs_planes,
+            r.ingresos_bs_anuncios,
+          ])}
+        />
+      </SectionCard>
 
-                {/* 4) Ingresos por día */}
-                <SectionCard
-                  title={
-                    monetizacionModo === "reciente"
-                      ? "Ingresos por día (última semana)"
-                      : "Ingresos por día (histórico)"
-                  }
-                >
-                  <SimpleTable
-                    headers={[
-                      "Fecha",
-                      "Total (Bs)",
-                      "Créditos (Bs)",
-                      "Planes (Bs)",
-                      "Anuncios (Bs)",
-                    ]}
-                    rows={ingresosDiaToShow.map((r: any) => [
-                      r.fecha_dia,
-                      r.ingresos_total_bs,
-                      r.ingresos_bs_creditos,
-                      r.ingresos_bs_planes,
-                      r.ingresos_bs_anuncios,
-                    ])}
-                  />
-                </SectionCard>
+      {/* 6) Ingresos por mes */}
+      <SectionCard title="Ingresos por mes">
+        <SimpleTable
+          headers={[
+            "Mes",
+            "Total (Bs)",
+            "Créditos (Bs)",
+            "Planes (Bs)",
+            "Anuncios (Bs)",
+            "Créditos vendidos",
+          ]}
+          rows={ingresosMes.map((r: any) => [
+            r.periodo_label,
+            r.ingresos_total_bs,
+            r.ingresos_bs_creditos,
+            r.ingresos_bs_planes,
+            r.ingresos_bs_anuncios,
+            r.creditos_vendidos_creditos,
+          ])}
+        />
+      </SectionCard>
 
-                {/* 5) Ingresos por semana */}
-                <SectionCard
-                  title={
-                    monetizacionModo === "reciente"
-                      ? "Ingresos por semana (último mes)"
-                      : "Ingresos por semana (histórico)"
-                  }
-                >
-                  <SimpleTable
-                    headers={[
-                      "Semana",
-                      "Fecha inicio",
-                      "Total (Bs)",
-                      "Créditos (Bs)",
-                      "Planes (Bs)",
-                      "Anuncios (Bs)",
-                    ]}
-                    rows={ingresosSemanaToShow.map((r: any) => [
-                      `${r.anio_iso}-W${r.semana_iso}`,
-                      r.semana_inicio,
-                      r.ingresos_total_bs,
-                      r.ingresos_bs_creditos,
-                      r.ingresos_bs_planes,
-                      r.ingresos_bs_anuncios,
-                    ])}
-                  />
-                </SectionCard>
+      {/* 7) Ingresos por año */}
+      <SectionCard title="Ingresos por año">
+        <SimpleTable
+          headers={[
+            "Año",
+            "Total (Bs)",
+            "Créditos (Bs)",
+            "Planes (Bs)",
+            "Anuncios (Bs)",
+            "Créditos vendidos",
+          ]}
+          rows={ingresosAnio.map((r: any) => [
+            r.anio,
+            r.ingresos_total_bs,
+            r.ingresos_bs_creditos,
+            r.ingresos_bs_planes,
+            r.ingresos_bs_anuncios,
+            r.creditos_vendidos_creditos,
+          ])}
+        />
+      </SectionCard>
 
-                {/* 6) Ingresos por mes (siempre histórico) */}
-                <SectionCard title="Ingresos por mes (histórico)">
-                  <SimpleTable
-                    headers={[
-                      "Mes",
-                      "Total (Bs)",
-                      "Créditos (Bs)",
-                      "Planes (Bs)",
-                      "Anuncios (Bs)",
-                      "Créditos vendidos",
-                    ]}
-                    rows={ingresosMes.map((r: any) => [
-                      r.periodo_label,
-                      r.ingresos_total_bs,
-                      r.ingresos_bs_creditos,
-                      r.ingresos_bs_planes,
-                      r.ingresos_bs_anuncios,
-                      r.creditos_vendidos_creditos,
-                    ])}
-                  />
-                </SectionCard>
+      {/* 8) Ranking usuarios que más gastaron */}
+      <SectionCard title="Ranking usuarios que más gastaron (créditos, planes, anuncios)">
+        <SimpleTable
+          headers={[
+            "#",
+            "Usuario",
+            "Gasto créditos (Bs)",
+            "Gasto planes (Bs)",
+            "Gasto anuncios (Bs)",
+            "Total (Bs)",
+          ]}
+          rows={rankingGasto.map((r: any) => [
+            r.ranking,
+            r.full_name ?? r.email,
+            r.gasto_creditos_bs,
+            r.gasto_planes_bs,
+            r.gasto_anuncios_bs,
+            r.gasto_total_bs,
+          ])}
+        />
+      </SectionCard>
 
-                {/* 7) Ingresos por año (siempre histórico) */}
-                <SectionCard title="Ingresos por año (histórico)">
-                  <SimpleTable
-                    headers={[
-                      "Año",
-                      "Total (Bs)",
-                      "Créditos (Bs)",
-                      "Planes (Bs)",
-                      "Anuncios (Bs)",
-                      "Créditos vendidos",
-                    ]}
-                    rows={ingresosAnio.map((r: any) => [
-                      r.anio,
-                      r.ingresos_total_bs,
-                      r.ingresos_bs_creditos,
-                      r.ingresos_bs_planes,
-                      r.ingresos_bs_anuncios,
-                      r.creditos_vendidos_creditos,
-                    ])}
-                  />
-                </SectionCard>
+      {/* 9) Inflación de créditos por mes */}
+      <SectionCard title="Inflación de créditos por mes">
+        <SimpleTable
+          headers={[
+            "Mes",
+            "Créditos generados",
+            "Créditos gastados",
+            "Inflación neta",
+          ]}
+          rows={inflacionMensual.map((r: any) => [
+            r.periodo_label,
+            r.creditos_generados,
+            r.creditos_gastados,
+            r.inflacion_neta,
+          ])}
+        />
+      </SectionCard>
 
-                {/* 8) Ranking usuarios que más gastaron */}
-                <SectionCard title="Ranking usuarios que más gastaron (créditos, planes, anuncios)">
-                  <SimpleTable
-                    headers={[
-                      "#",
-                      "Usuario",
-                      "Gasto créditos (Bs)",
-                      "Gasto planes (Bs)",
-                      "Gasto anuncios (Bs)",
-                      "Total (Bs)",
-                    ]}
-                    rows={rankingGasto.map((r: any) => [
-                      r.ranking,
-                      r.full_name ?? r.email,
-                      r.gasto_creditos_bs,
-                      r.gasto_planes_bs,
-                      r.gasto_anuncios_bs,
-                      r.gasto_total_bs,
-                    ])}
-                  />
-                </SectionCard>
+      {/* 10) Créditos ganados vs comprados */}
+      <SectionCard title="Créditos ganados vs comprados por usuario">
+        <SimpleTable
+          headers={[
+            "Usuario",
+            "Créditos comprados",
+            "Créditos ganados",
+            "Total créditos",
+            "% comprados",
+          ]}
+          rows={creditosGanVsComp.map((r: any) => [
+            r.full_name ?? r.email,
+            r.creditos_comprados,
+            r.creditos_ganados,
+            r.total_creditos,
+            r.porcentaje_comprado,
+          ])}
+        />
+      </SectionCard>
 
-                {/* 9) Inflación de créditos por mes */}
-                <SectionCard title="Inflación de créditos por mes">
-                  <SimpleTable
-                    headers={[
-                      "Mes",
-                      "Créditos generados",
-                      "Créditos gastados",
-                      "Inflación neta",
-                    ]}
-                    rows={inflacionMensual.map((r: any) => [
-                      r.periodo_label,
-                      r.creditos_generados,
-                      r.creditos_gastados,
-                      r.inflacion_neta,
-                    ])}
-                  />
-                </SectionCard>
+      {/* 11) Usuarios con más créditos acumulados */}
+      <SectionCard title="Usuarios con más créditos acumulados (ranking)">
+        <SimpleTable
+          headers={["#", "Usuario", "Saldo total de créditos"]}
+          rows={rankingCreditosAcum.map((r: any) => [
+            r.ranking,
+            r.full_name ?? r.email,
+            r.saldo_total,
+          ])}
+        />
+      </SectionCard>
+    </>
+  );
+})()}
 
-                {/* 10) Créditos ganados vs comprados */}
-                <SectionCard title="Créditos ganados vs comprados por usuario">
-                  <SimpleTable
-                    headers={[
-                      "Usuario",
-                      "Créditos comprados",
-                      "Créditos ganados",
-                      "Total créditos",
-                      "% comprados",
-                    ]}
-                    rows={creditosGanVsComp.map((r: any) => [
-                      r.full_name ?? r.email,
-                      r.creditos_comprados,
-                      r.creditos_ganados,
-                      r.total_creditos,
-                      r.porcentaje_comprado,
-                    ])}
-                  />
-                </SectionCard>
 
-                {/* 11) Usuarios con más créditos acumulados */}
-                <SectionCard title="Usuarios con más créditos acumulados (ranking)">
-                  <SimpleTable
-                    headers={["#", "Usuario", "Saldo total de créditos"]}
-                    rows={rankingCreditosAcum.map((r: any) => [
-                      r.ranking,
-                      r.full_name ?? r.email,
-                      r.saldo_total,
-                    ])}
-                  />
-                </SectionCard>
-              </>
-            );
-          })()}
 
         {/* ============== IMPACTO AMBIENTAL ============== */}
         {activeTab === "Impacto Ambiental" && impacto && (
@@ -923,6 +808,7 @@ function KPI({ label, value }: { label: string; value: number | string }) {
     </div>
   );
 }
+
 
 function renderCellValue(v: ReactNode | null): ReactNode {
   if (v === null || v === undefined) return "-";
