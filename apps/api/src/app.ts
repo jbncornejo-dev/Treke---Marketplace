@@ -4,9 +4,11 @@ import cors from "cors";
 import path from "path";
 import usuariosRoutes from "./modules/usuarios/usuarios.routes";
 import marketRoutes from "./modules/market/market.routes";
-import reportRoutes from "./modules/report/report.routes";
+
 import creditosRoutes from "./modules/creditos/creditos.routes";
 import intercambiosRoutes from "./modules/intercambios/intercambios.routes";
+import adminReportRouter from "./modules/reports_admin/reports_admin.routes";
+import  {userReportRouter}  from "./modules/report-user/userReport.routes";
 
 const app = express();
 
@@ -18,7 +20,9 @@ app.use("/api", usuariosRoutes);
 app.use("/api", marketRoutes);
 app.use("/api", creditosRoutes);
 app.use("/api", intercambiosRoutes);
-app.use("/api", reportRoutes); // 👈 aquí quedan TODOS tus reportes
+app.use("/api/admin/reportes", adminReportRouter);
+app.use("/api/user/reportes", userReportRouter);
+
 
 // 🔹 Archivos estáticos (fotos de publicaciones, etc.)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
