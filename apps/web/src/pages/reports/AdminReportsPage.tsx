@@ -149,85 +149,242 @@ export default function AdminReportsPage() {
 
       {/* Contenido por tab */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {/* ============== DASHBOARD ============== */}
-        {activeTab === "Dashboard" &&
-          dashboard &&
-          (() => {
-            const raw = dashboard as any;
-            const resumen = raw?.resumen ?? raw;
+{/* ============== DASHBOARD ============== */}
+{activeTab === "Dashboard" &&
+  dashboard &&
+  (() => {
+    const raw = dashboard as any;
+    const resumen = raw?.resumen ?? raw;
 
-            if (!resumen) {
-              return (
-                <SectionCard title="Resumen general">
-                  <div className="text-xs text-neutral-400">
-                    Sin datos de dashboard disponibles.
-                  </div>
-                </SectionCard>
-              );
-            }
+    if (!resumen) {
+      return (
+        <SectionCard title="Resumen general">
+          <div className="text-xs text-neutral-400">
+            Sin datos de dashboard disponibles.
+          </div>
+        </SectionCard>
+      );
+    }
 
-            return (
-              <SectionCard title="Resumen general">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <KPI
-                    label="Ingresos totales (Bs)"
-                    value={resumen.ingresos_total_bs}
-                  />
-                  <KPI
-                    label="Créditos vendidos"
-                    value={resumen.creditos_vendidos_total}
-                  />
-                  <KPI
-                    label="Usuarios registrados"
-                    value={resumen.usuarios_registrados}
-                  />
-                  <KPI
-                    label="Usuarios activos"
-                    value={resumen.usuarios_activos}
-                  />
-                  <KPI
-                    label="Intercambios completados"
-                    value={resumen.intercambios_completados}
-                  />
-                  <KPI
-                    label="CO₂ evitado (kg)"
-                    value={resumen.impacto_total_co2_kg}
-                  />
-                  <KPI
-                    label="Energía ahorrada (kWh)"
-                    value={resumen.impacto_total_energia_kwh}
-                  />
-                  <KPI
-                    label="Agua preservada (L)"
-                    value={resumen.impacto_total_agua_l}
-                  />
-                </div>
-              </SectionCard>
-            );
-          })()}
+    const datosUsuarios = [
+      {
+        name: "Usuarios registrados",
+        value: Number(resumen.usuarios_registrados ?? 0),
+      },
+      {
+        name: "Usuarios activos",
+        value: Number(resumen.usuarios_activos ?? 0),
+      },
+      {
+        name: "Intercambios completados",
+        value: Number(resumen.intercambios_completados ?? 0),
+      },
+    ];
+
+    const impactoData = [
+      {
+        name: "CO₂ evitado (kg)",
+        value: Number(resumen.impacto_total_co2_kg ?? 0),
+      },
+      {
+        name: "Energía ahorrada (kWh)",
+        value: Number(resumen.impacto_total_energia_kwh ?? 0),
+      },
+      {
+        name: "Agua preservada (L)",
+        value: Number(resumen.impacto_total_agua_l ?? 0),
+      },
+    ];
+
+    return (
+      <>
+        {/* KPIs grandes – 2 por fila en desktop */}
+        <SectionCard title="Resumen general">
+          <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2">
+            <KPI
+              label="Ingresos totales (Bs)"
+              value={resumen.ingresos_total_bs}
+            />
+            <KPI
+              label="Créditos vendidos"
+              value={resumen.creditos_vendidos_total}
+            />
+            <KPI
+              label="Usuarios registrados"
+              value={resumen.usuarios_registrados}
+            />
+            <KPI
+              label="Usuarios activos"
+              value={resumen.usuarios_activos}
+            />
+            <KPI
+              label="Intercambios completados"
+              value={resumen.intercambios_completados}
+            />
+            <KPI
+              label="CO₂ evitado (kg)"
+              value={resumen.impacto_total_co2_kg}
+            />
+            <KPI
+              label="Energía ahorrada (kWh)"
+              value={resumen.impacto_total_energia_kwh}
+            />
+            <KPI
+              label="Agua preservada (L)"
+              value={resumen.impacto_total_agua_l}
+            />
+          </div>
+        </SectionCard>
+
+        {/* Gráfico de usuarios / intercambios */}
+        <SectionCard title="Intercambios y usuarios">
+          <ChartWrapper>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={datosUsuarios}
+                margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis />
+                <Tooltip />
+                <Bar
+                  dataKey="value"
+                  name="Cantidad"
+                  barSize={28}
+                  radius={[10, 10, 10, 10]}
+                  fill="#10b981"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartWrapper>
+        </SectionCard>
+
+        {/* Gráfico de impacto ambiental (torta) */}
+        <SectionCard title="Impacto ambiental global">
+          <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
+            <ChartWrapper>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={impactoData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={45}
+                    outerRadius={80}
+                    paddingAngle={4}
+                  >
+                    {impactoData.map((_, idx) => (
+                      <Cell
+                        key={idx}
+                        fill={CHART_COLORS[idx % CHART_COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartWrapper>
+
+            <SimpleTable
+              headers={["Indicador", "Valor"]}
+              rows={impactoData.map((d) => [d.name, d.value])}
+            />
+          </div>
+        </SectionCard>
+      </>
+    );
+  })()}
 
         {/* ============== COMUNIDAD ============== */}
         {activeTab === "Comunidad" && comunidad && (
           <>
             <SectionCard title="Usuarios por estado">
-              <SimpleTable
-                headers={["Estado", "Total"]}
-                rows={(comunidad.estados ?? []).map((r) => [
-                  r.estado,
-                  r.total_usuarios,
-                ])}
-              />
+              <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
+                <ChartWrapper>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={(comunidad.estados ?? []).map((r) => ({
+                          name: r.estado,
+                          value: Number(r.total_usuarios ?? 0),
+                        }))}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={45}
+                        outerRadius={80}
+                        paddingAngle={4}
+                      >
+                        {(comunidad.estados ?? []).map((_, idx) => (
+                          <Cell
+                            key={idx}
+                            fill={CHART_COLORS[idx % CHART_COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartWrapper>
+                <SimpleTable
+                  headers={["Estado", "Total"]}
+                  rows={(comunidad.estados ?? []).map((r) => [
+                    r.estado,
+                    r.total_usuarios,
+                  ])}
+                />
+              </div>
             </SectionCard>
 
             <SectionCard title="Crecimiento mensual">
-              <SimpleTable
-                headers={["Periodo", "Nuevos", "Acumulado"]}
-                rows={(comunidad.crecimiento_mensual ?? []).map((r) => [
-                  r.periodo,
-                  r.usuarios_nuevos_mes,
-                  r.total_acumulado,
-                ])}
-              />
+              <div className="grid gap-4 lg:grid-cols-[1.3fr,1fr]">
+                <ChartWrapper>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={(comunidad.crecimiento_mensual ?? []).map(
+                        (r: any) => ({
+                          periodo: r.periodo,
+                          nuevos: Number(r.usuarios_nuevos_mes ?? 0),
+                          acumulado: Number(r.total_acumulado ?? 0),
+                        })
+                      )}
+                      margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                      <XAxis dataKey="periodo" tick={{ fontSize: 11 }} />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="nuevos"
+                        name="Nuevos"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="acumulado"
+                        name="Acumulado"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartWrapper>
+                <SimpleTable
+                  headers={["Periodo", "Nuevos", "Acumulado"]}
+                  rows={(comunidad.crecimiento_mensual ?? []).map((r) => [
+                    r.periodo,
+                    r.usuarios_nuevos_mes,
+                    r.total_acumulado,
+                  ])}
+                />
+              </div>
             </SectionCard>
 
             <SectionCard title="Crecimiento trimestral">
@@ -336,7 +493,9 @@ export default function AdminReportsPage() {
         {activeTab === "Publicaciones & catálogo" && publicaciones && (
           <>
             <SectionCard title="Resumen de publicaciones">
-              <div className="grid grid-cols-1 gap-2 text-sm">
+                <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2">
+
+
                 <KPI
                   label="Total publicaciones"
                   value={publicaciones.resumen.total_publicaciones}
@@ -364,816 +523,1016 @@ export default function AdminReportsPage() {
               />
             </SectionCard>
 
-            <SectionCard title="Publicaciones por categoría">
-              <SimpleTable
-                headers={["Categoría", "Total publicaciones"]}
-                rows={(publicaciones.por_categoria ?? []).map((r) => [
-                  r.categoria_nombre,
-                  r.total_publicaciones,
-                ])}
+            {/* TORTA: publicaciones por categoría */}
+            {/* TORTA: publicaciones por categoría */}
+{(() => {
+  const data = (publicaciones.por_categoria ?? []).map((r: any) => ({
+    name: r.categoria_nombre || "Sin categoría",
+    value: Number(r.total_publicaciones ?? 0),
+  }));
+
+  return (
+    <SectionCard title="Publicaciones por categoría">
+      <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
+        <ChartWrapper>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={45}
+                outerRadius={80}
+                paddingAngle={4}
+              >
+                {data.map((_, idx) => (
+                  <Cell
+                    key={idx}
+                    fill={CHART_COLORS[idx % CHART_COLORS.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend
+                layout="vertical"
+                align="right"
+                verticalAlign="middle"
+                wrapperStyle={{
+                  fontSize: 11,
+                  paddingLeft: 8,
+                }}
               />
-            </SectionCard>
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartWrapper>
+
+        <SimpleTable
+          headers={["Categoría", "Total publicaciones"]}
+          rows={(publicaciones.por_categoria ?? []).map((r) => [
+            r.categoria_nombre,
+            r.total_publicaciones,
+          ])}
+        />
+      </div>
+    </SectionCard>
+  );
+})()}
+
 
             <SectionCard title="Publicaciones por ubicación">
-              <SimpleTable
-                headers={["Ubicación", "Total publicaciones"]}
-                rows={(publicaciones.por_ubicacion ?? []).map((r) => [
-                  r.ubicacion_texto,
-                  r.total_publicaciones ?? r.total_publicaciones,
-                ])}
-              />
+              <div className="grid gap-4 lg:grid-cols-[1.3fr,1fr]">
+                <ChartWrapper>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={(publicaciones.por_ubicacion ?? []).map(
+                        (r: any) => ({
+                          name: r.ubicacion_texto,
+                          total: Number(r.total_publicaciones ?? 0),
+                        })
+                      )}
+                      margin={{ top: 10, right: 20, left: 0, bottom: 40 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 10 }}
+                        interval={0}
+                      />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar
+                        dataKey="total"
+                        name="Publicaciones"
+                        barSize={24}
+                        radius={[8, 8, 8, 8]}
+                        fill="#3b82f6"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartWrapper>
+                <SimpleTable
+                  headers={["Ubicación", "Total publicaciones"]}
+                  rows={(publicaciones.por_ubicacion ?? []).map((r) => [
+                    r.ubicacion_texto,
+                    r.total_publicaciones ?? r.total_publicaciones,
+                  ])}
+                />
+              </div>
             </SectionCard>
 
             <SectionCard title="Intercambiadas vs no intercambiadas">
-              <SimpleTable
-                headers={["Total", "Intercambiadas", "No intercambiadas"]}
-                rows={[
-                  [
-                    publicaciones.intercambiadas_resumen.total_publicaciones,
-                    publicaciones.intercambiadas_resumen
-                      .publicaciones_intercambiadas,
-                    publicaciones.intercambiadas_resumen
-                      .publicaciones_no_intercambiadas,
-                  ],
-                ]}
-              />
+              <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
+                <ChartWrapper>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          {
+                            name: "Intercambiadas",
+                            value: Number(
+                              publicaciones.intercambiadas_resumen
+                                .publicaciones_intercambiadas ?? 0
+                            ),
+                          },
+                          {
+                            name: "No intercambiadas",
+                            value: Number(
+                              publicaciones.intercambiadas_resumen
+                                .publicaciones_no_intercambiadas ?? 0
+                            ),
+                          },
+                        ]}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={45}
+                        outerRadius={80}
+                        paddingAngle={4}
+                      >
+                        <Cell fill="#10b981" />
+                        <Cell fill="#ef4444" />
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartWrapper>
+                <SimpleTable
+                  headers={["Total", "Intercambiadas", "No intercambiadas"]}
+                  rows={[
+                    [
+                      publicaciones.intercambiadas_resumen.total_publicaciones,
+                      publicaciones.intercambiadas_resumen
+                        .publicaciones_intercambiadas,
+                      publicaciones.intercambiadas_resumen
+                        .publicaciones_no_intercambiadas,
+                    ],
+                  ]}
+                />
+              </div>
             </SectionCard>
           </>
         )}
 
         {/* ============== MONETIZACIÓN ============== */}
-{activeTab === "Monetización" &&
-  monetizacion &&
-  (() => {
-    const raw = monetizacion as any;
+        {activeTab === "Monetización" &&
+          monetizacion &&
+          (() => {
+            const raw = monetizacion as any;
 
-    const resumen =
-      raw?.resumen_totales ?? raw?.resumen ?? raw;
+            const resumen = raw?.resumen_totales ?? raw?.resumen ?? raw;
 
-    const usuariosPagadores =
-      raw?.usuarios_pagadores_resumen ?? raw?.usuarios_pagadores;
-    const ingresosPorFuente = raw?.ingresos_por_fuente ?? [];
-    const rankingGasto =
-      raw?.ranking_usuarios_gasto_total ?? raw?.ranking_gasto_total ?? [];
-    const ingresosDia = raw?.ingresos_dia ?? [];
-    const ingresosSemana = raw?.ingresos_semana ?? [];
-    const ingresosMes = raw?.ingresos_mes ?? [];
-    const ingresosAnio = raw?.ingresos_anio ?? [];
-    const inflacionMensual =
-      raw?.inflacion_creditos_mensual ?? raw?.inflacion_mensual ?? [];
-    const creditosGanVsComp =
-      raw?.creditos_ganados_vs_comprados ?? [];
-    const rankingCreditosAcum =
-      raw?.ranking_usuarios_creditos_acumulados ??
-      raw?.ranking_creditos_acumulados ??
-      [];
+            const usuariosPagadores =
+              raw?.usuarios_pagadores_resumen ?? raw?.usuarios_pagadores;
+            const ingresosPorFuente = raw?.ingresos_por_fuente ?? [];
+            const rankingGasto =
+              raw?.ranking_usuarios_gasto_total ??
+              raw?.ranking_gasto_total ??
+              [];
+            const ingresosDia = raw?.ingresos_dia ?? [];
+            const ingresosSemana = raw?.ingresos_semana ?? [];
+            const ingresosMes = raw?.ingresos_mes ?? [];
+            const ingresosAnio = raw?.ingresos_anio ?? [];
+            const inflacionMensual =
+              raw?.inflacion_creditos_mensual ??
+              raw?.inflacion_mensual ??
+              [];
+            const creditosGanVsComp =
+              raw?.creditos_ganados_vs_comprados ?? [];
+            const rankingCreditosAcum =
+              raw?.ranking_usuarios_creditos_acumulados ??
+              raw?.ranking_creditos_acumulados ??
+              [];
 
-    if (!resumen) {
-      return (
-        <SectionCard title="Resumen monetización">
-          <div className="text-xs text-neutral-400">
-            Sin datos de monetización disponibles.
-          </div>
-        </SectionCard>
-      );
-    }
+            if (!resumen) {
+              return (
+                <SectionCard title="Resumen monetización">
+                  <div className="text-xs text-neutral-400">
+                    Sin datos de monetización disponibles.
+                  </div>
+                </SectionCard>
+              );
+            }
 
-    const resumenDistribucion = [
-      {
-        name: "Créditos",
-        value: Number(resumen.ingresos_bs_creditos ?? 0),
-      },
-      {
-        name: "Planes",
-        value: Number(resumen.ingresos_bs_planes ?? 0),
-      },
-      {
-        name: "Anuncios",
-        value: Number(resumen.ingresos_bs_anuncios ?? 0),
-      },
-    ];
+            const resumenDistribucion = [
+              {
+                name: "Créditos",
+                value: Number(resumen.ingresos_bs_creditos ?? 0),
+              },
+              {
+                name: "Planes",
+                value: Number(resumen.ingresos_bs_planes ?? 0),
+              },
+              {
+                name: "Anuncios",
+                value: Number(resumen.ingresos_bs_anuncios ?? 0),
+              },
+            ];
 
-    return (
-      <>
-        {/* 1) Resumen monetización + gráfico de distribución */}
-        <SectionCard title="Resumen monetización">
-          <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <KPI
-                label="Ingresos totales (Bs)"
-                value={resumen.ingresos_total_bs}
-              />
-              <KPI
-                label="Créditos vendidos totales"
-                value={resumen.creditos_vendidos_creditos}
-              />
-              <KPI
-                label="Ingresos por planes (Bs)"
-                value={resumen.ingresos_bs_planes}
-              />
-              <KPI
-                label="Ingresos por anuncios (Bs)"
-                value={resumen.ingresos_bs_anuncios}
-              />
-            </div>
-            <ChartWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={resumenDistribucion}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={45}
-                    outerRadius={80}
-                    paddingAngle={4}
-                  >
-                    {resumenDistribucion.map((_, idx) => (
-                      <Cell
-                        key={idx}
-                        fill={CHART_COLORS[idx % CHART_COLORS.length]}
+            return (
+              <>
+                {/* 1) Resumen monetización + gráfico de distribución */}
+                <SectionCard title="Resumen monetización">
+                 <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
+                    <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2">
+
+                      <KPI
+                        label="Ingresos totales (Bs)"
+                        value={resumen.ingresos_total_bs}
                       />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </ChartWrapper>
-          </div>
-        </SectionCard>
+                      <KPI
+                        label="Créditos vendidos totales"
+                        value={resumen.creditos_vendidos_creditos}
+                      />
+                      <KPI
+                        label="Ingresos por planes (Bs)"
+                        value={resumen.ingresos_bs_planes}
+                      />
+                      <KPI
+                        label="Ingresos por anuncios (Bs)"
+                        value={resumen.ingresos_bs_anuncios}
+                      />
+                    </div>
+                    <ChartWrapper>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={resumenDistribucion}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={45}
+                            outerRadius={80}
+                            paddingAngle={4}
+                          >
+                            {resumenDistribucion.map((_, idx) => (
+                              <Cell
+                                key={idx}
+                                fill={
+                                  CHART_COLORS[idx % CHART_COLORS.length]
+                                }
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </ChartWrapper>
+                  </div>
+                </SectionCard>
 
-        {/* 2) Usuarios pagadores vs sin pago (gráfico + tabla) */}
-        <SectionCard title="Usuarios pagadores vs usuarios sin pago">
-          <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
-            <div>
-              {usuariosPagadores ? (
-                <SimpleTable
-                  headers={["Total usuarios", "Pagadores", "Sin pago"]}
-                  rows={[
-                    [
-                      usuariosPagadores.total_usuarios,
-                      usuariosPagadores.usuarios_pagadores,
-                      usuariosPagadores.usuarios_sin_pago,
-                    ],
-                  ]}
-                />
-              ) : (
-                <div className="text-xs text-neutral-400">
-                  Sin datos de usuarios pagadores.
-                </div>
-              )}
-            </div>
-            {usuariosPagadores && (
-              <ChartWrapper>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={[
-                        {
-                          name: "Pagadores",
-                          value:
-                            Number(
-                              usuariosPagadores.usuarios_pagadores ?? 0
-                            ) || 0,
-                        },
-                        {
-                          name: "Sin pago",
-                          value:
-                            Number(
-                              usuariosPagadores.usuarios_sin_pago ?? 0
-                            ) || 0,
-                        },
+                {/* 2) Usuarios pagadores vs sin pago (gráfico + tabla) */}
+                <SectionCard title="Usuarios pagadores vs usuarios sin pago">
+                  <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
+                    <div>
+                      {usuariosPagadores ? (
+                        <SimpleTable
+                          headers={[
+                            "Total usuarios",
+                            "Pagadores",
+                            "Sin pago",
+                          ]}
+                          rows={[
+                            [
+                              usuariosPagadores.total_usuarios,
+                              usuariosPagadores.usuarios_pagadores,
+                              usuariosPagadores.usuarios_sin_pago,
+                            ],
+                          ]}
+                        />
+                      ) : (
+                        <div className="text-xs text-neutral-400">
+                          Sin datos de usuarios pagadores.
+                        </div>
+                      )}
+                    </div>
+                    {usuariosPagadores && (
+                      <ChartWrapper>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={[
+                                {
+                                  name: "Pagadores",
+                                  value:
+                                    Number(
+                                      usuariosPagadores.usuarios_pagadores ??
+                                        0
+                                    ) || 0,
+                                },
+                                {
+                                  name: "Sin pago",
+                                  value:
+                                    Number(
+                                      usuariosPagadores.usuarios_sin_pago ??
+                                        0
+                                    ) || 0,
+                                },
+                              ]}
+                              dataKey="value"
+                              nameKey="name"
+                              innerRadius={40}
+                              outerRadius={75}
+                              paddingAngle={4}
+                            >
+                              <Cell fill="#10b981" />
+                              <Cell fill="#4b5563" />
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </ChartWrapper>
+                    )}
+                  </div>
+                </SectionCard>
+
+                {/* 3) Ingresos por fuente (barras + tabla) */}
+                <SectionCard title="Ingresos por fuente (créditos / planes / anuncios)">
+                  <div className="grid gap-4 lg:grid-cols-[1.3fr,1fr]">
+                    <ChartWrapper>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={ingresosPorFuente.map((r: any) => ({
+                            name: r.fuente,
+                            ingresos: Number(r.ingresos_total_bs ?? 0),
+                            creditos: Number(r.creditos_totales ?? 0),
+                          }))}
+                          margin={{
+                            top: 10,
+                            right: 10,
+                            left: 0,
+                            bottom: 20,
+                          }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            opacity={0.15}
+                          />
+                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar
+                            dataKey="ingresos"
+                            name="Ingresos (Bs)"
+                            barSize={28}
+                            radius={[8, 8, 8, 8]}
+                            fill="#10b981"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartWrapper>
+                    <SimpleTable
+                      headers={["Fuente", "Ingresos (Bs)", "Créditos"]}
+                      rows={ingresosPorFuente.map((r: any) => [
+                        r.fuente,
+                        r.ingresos_total_bs,
+                        r.creditos_totales,
+                      ])}
+                    />
+                  </div>
+                </SectionCard>
+
+                {/* 4) Ingresos por día (línea + tabla) */}
+                <SectionCard title="Ingresos por día">
+                  <div className="space-y-3">
+                    <ChartWrapper>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={ingresosDia.map((r: any) => ({
+                            fecha: r.fecha_dia,
+                            total: Number(r.ingresos_total_bs ?? 0),
+                            creditos: Number(r.ingresos_bs_creditos ?? 0),
+                            planes: Number(r.ingresos_bs_planes ?? 0),
+                            anuncios: Number(r.ingresos_bs_anuncios ?? 0),
+                          }))}
+                          margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            opacity={0.15}
+                          />
+                          <XAxis dataKey="fecha" tick={{ fontSize: 11 }} />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="total"
+                            name="Total (Bs)"
+                            stroke="#10b981"
+                            strokeWidth={2.2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="creditos"
+                            name="Créditos (Bs)"
+                            stroke="#3b82f6"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="planes"
+                            name="Planes (Bs)"
+                            stroke="#a855f7"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="anuncios"
+                            name="Anuncios (Bs)"
+                            stroke="#f97316"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </ChartWrapper>
+
+                    <SimpleTable
+                      headers={[
+                        "Fecha",
+                        "Total (Bs)",
+                        "Créditos (Bs)",
+                        "Planes (Bs)",
+                        "Anuncios (Bs)",
                       ]}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={40}
-                      outerRadius={75}
-                      paddingAngle={4}
-                    >
-                      <Cell fill="#10b981" />
-                      <Cell fill="#4b5563" />
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </ChartWrapper>
-            )}
-          </div>
-        </SectionCard>
+                      rows={ingresosDia.map((r: any) => [
+                        r.fecha_dia,
+                        r.ingresos_total_bs,
+                        r.ingresos_bs_creditos,
+                        r.ingresos_bs_planes,
+                        r.ingresos_bs_anuncios,
+                      ])}
+                    />
+                  </div>
+                </SectionCard>
 
-        {/* 3) Ingresos por fuente (barras mejoradas + tabla) */}
-        <SectionCard title="Ingresos por fuente (créditos / planes / anuncios)">
-          <div className="grid gap-4 lg:grid-cols-[1.3fr,1fr]">
-            <ChartWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={ingresosPorFuente.map((r: any) => ({
-                    name: r.fuente,
-                    ingresos: Number(r.ingresos_total_bs ?? 0),
-                    creditos: Number(r.creditos_totales ?? 0),
-                  }))}
-                  margin={{
-                    top: 10,
-                    right: 10,
-                    left: 0,
-                    bottom: 20,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar
-                    dataKey="ingresos"
-                    name="Ingresos (Bs)"
-                    barSize={28}
-                    radius={[8, 8, 8, 8]}
-                    fill="#10b981"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartWrapper>
-            <SimpleTable
-              headers={["Fuente", "Ingresos (Bs)", "Créditos"]}
-              rows={ingresosPorFuente.map((r: any) => [
-                r.fuente,
-                r.ingresos_total_bs,
-                r.creditos_totales,
-              ])}
-            />
-          </div>
-        </SectionCard>
+                {/* 5) Ingresos por semana (línea + tabla) */}
+                <SectionCard title="Ingresos por semana">
+                  <div className="space-y-3">
+                    <ChartWrapper>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={ingresosSemana.map((r: any) => ({
+                            semana: `${r.anio_iso}-W${r.semana_iso}`,
+                            total: Number(r.ingresos_total_bs ?? 0),
+                            creditos: Number(r.ingresos_bs_creditos ?? 0),
+                            planes: Number(r.ingresos_bs_planes ?? 0),
+                            anuncios: Number(r.ingresos_bs_anuncios ?? 0),
+                          }))}
+                          margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            opacity={0.15}
+                          />
+                          <XAxis dataKey="semana" tick={{ fontSize: 11 }} />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="total"
+                            name="Total (Bs)"
+                            stroke="#10b981"
+                            strokeWidth={2.2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="creditos"
+                            name="Créditos (Bs)"
+                            stroke="#3b82f6"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="planes"
+                            name="Planes (Bs)"
+                            stroke="#a855f7"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="anuncios"
+                            name="Anuncios (Bs)"
+                            stroke="#f97316"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </ChartWrapper>
 
-        {/* 4) Ingresos por día (línea + tabla) */}
-        <SectionCard title="Ingresos por día">
-          <div className="space-y-3">
-            <ChartWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={ingresosDia.map((r: any) => ({
-                    fecha: r.fecha_dia,
-                    total: Number(r.ingresos_total_bs ?? 0),
-                    creditos: Number(r.ingresos_bs_creditos ?? 0),
-                    planes: Number(r.ingresos_bs_planes ?? 0),
-                    anuncios: Number(r.ingresos_bs_anuncios ?? 0),
-                  }))}
-                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                  <XAxis dataKey="fecha" tick={{ fontSize: 11 }} />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    name="Total (Bs)"
-                    stroke="#10b981"
-                    strokeWidth={2.2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="creditos"
-                    name="Créditos (Bs)"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="planes"
-                    name="Planes (Bs)"
-                    stroke="#a855f7"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="anuncios"
-                    name="Anuncios (Bs)"
-                    stroke="#f97316"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartWrapper>
+                    <SimpleTable
+                      headers={[
+                        "Semana",
+                        "Fecha inicio",
+                        "Total (Bs)",
+                        "Créditos (Bs)",
+                        "Planes (Bs)",
+                        "Anuncios (Bs)",
+                      ]}
+                      rows={ingresosSemana.map((r: any) => [
+                        `${r.anio_iso}-W${r.semana_iso}`,
+                        r.semana_inicio,
+                        r.ingresos_total_bs,
+                        r.ingresos_bs_creditos,
+                        r.ingresos_bs_planes,
+                        r.ingresos_bs_anuncios,
+                      ])}
+                    />
+                  </div>
+                </SectionCard>
 
-            <SimpleTable
-              headers={[
-                "Fecha",
-                "Total (Bs)",
-                "Créditos (Bs)",
-                "Planes (Bs)",
-                "Anuncios (Bs)",
-              ]}
-              rows={ingresosDia.map((r: any) => [
-                r.fecha_dia,
-                r.ingresos_total_bs,
-                r.ingresos_bs_creditos,
-                r.ingresos_bs_planes,
-                r.ingresos_bs_anuncios,
-              ])}
-            />
-          </div>
-        </SectionCard>
+                {/* 6) Ingresos por mes (línea + tabla) */}
+                <SectionCard title="Ingresos por mes">
+                  <div className="space-y-3">
+                    <ChartWrapper>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={ingresosMes.map((r: any) => ({
+                            periodo: r.periodo_label,
+                            total: Number(r.ingresos_total_bs ?? 0),
+                            creditos: Number(r.ingresos_bs_creditos ?? 0),
+                            planes: Number(r.ingresos_bs_planes ?? 0),
+                            anuncios: Number(r.ingresos_bs_anuncios ?? 0),
+                          }))}
+                          margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            opacity={0.15}
+                          />
+                          <XAxis dataKey="periodo" tick={{ fontSize: 11 }} />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="total"
+                            name="Total (Bs)"
+                            stroke="#10b981"
+                            strokeWidth={2.2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="creditos"
+                            name="Créditos (Bs)"
+                            stroke="#3b82f6"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="planes"
+                            name="Planes (Bs)"
+                            stroke="#a855f7"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="anuncios"
+                            name="Anuncios (Bs)"
+                            stroke="#f97316"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </ChartWrapper>
 
-        {/* 5) Ingresos por semana (línea + tabla) */}
-        <SectionCard title="Ingresos por semana">
-          <div className="space-y-3">
-            <ChartWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={ingresosSemana.map((r: any) => ({
-                    semana: `${r.anio_iso}-W${r.semana_iso}`,
-                    total: Number(r.ingresos_total_bs ?? 0),
-                    creditos: Number(r.ingresos_bs_creditos ?? 0),
-                    planes: Number(r.ingresos_bs_planes ?? 0),
-                    anuncios: Number(r.ingresos_bs_anuncios ?? 0),
-                  }))}
-                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                  <XAxis dataKey="semana" tick={{ fontSize: 11 }} />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    name="Total (Bs)"
-                    stroke="#10b981"
-                    strokeWidth={2.2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="creditos"
-                    name="Créditos (Bs)"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="planes"
-                    name="Planes (Bs)"
-                    stroke="#a855f7"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="anuncios"
-                    name="Anuncios (Bs)"
-                    stroke="#f97316"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartWrapper>
+                    <SimpleTable
+                      headers={[
+                        "Mes",
+                        "Total (Bs)",
+                        "Créditos (Bs)",
+                        "Planes (Bs)",
+                        "Anuncios (Bs)",
+                        "Créditos vendidos",
+                      ]}
+                      rows={ingresosMes.map((r: any) => [
+                        r.periodo_label,
+                        r.ingresos_total_bs,
+                        r.ingresos_bs_creditos,
+                        r.ingresos_bs_planes,
+                        r.ingresos_bs_anuncios,
+                        r.creditos_vendidos_creditos,
+                      ])}
+                    />
+                  </div>
+                </SectionCard>
 
-            <SimpleTable
-              headers={[
-                "Semana",
-                "Fecha inicio",
-                "Total (Bs)",
-                "Créditos (Bs)",
-                "Planes (Bs)",
-                "Anuncios (Bs)",
-              ]}
-              rows={ingresosSemana.map((r: any) => [
-                `${r.anio_iso}-W${r.semana_iso}`,
-                r.semana_inicio,
-                r.ingresos_total_bs,
-                r.ingresos_bs_creditos,
-                r.ingresos_bs_planes,
-                r.ingresos_bs_anuncios,
-              ])}
-            />
-          </div>
-        </SectionCard>
+                {/* 7) Ingresos por año (línea + tabla) */}
+                <SectionCard title="Ingresos por año">
+                  <div className="space-y-3">
+                    <ChartWrapper>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={ingresosAnio.map((r: any) => ({
+                            anio: r.anio,
+                            total: Number(r.ingresos_total_bs ?? 0),
+                            creditos: Number(r.ingresos_bs_creditos ?? 0),
+                            planes: Number(r.ingresos_bs_planes ?? 0),
+                            anuncios: Number(r.ingresos_bs_anuncios ?? 0),
+                          }))}
+                          margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            opacity={0.15}
+                          />
+                          <XAxis dataKey="anio" tick={{ fontSize: 11 }} />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="total"
+                            name="Total (Bs)"
+                            stroke="#10b981"
+                            strokeWidth={2.2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="creditos"
+                            name="Créditos (Bs)"
+                            stroke="#3b82f6"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="planes"
+                            name="Planes (Bs)"
+                            stroke="#a855f7"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="anuncios"
+                            name="Anuncios (Bs)"
+                            stroke="#f97316"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </ChartWrapper>
 
-        {/* 6) Ingresos por mes (línea + tabla) */}
-        <SectionCard title="Ingresos por mes">
-          <div className="space-y-3">
-            <ChartWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={ingresosMes.map((r: any) => ({
-                    periodo: r.periodo_label,
-                    total: Number(r.ingresos_total_bs ?? 0),
-                    creditos: Number(r.ingresos_bs_creditos ?? 0),
-                    planes: Number(r.ingresos_bs_planes ?? 0),
-                    anuncios: Number(r.ingresos_bs_anuncios ?? 0),
-                  }))}
-                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                  <XAxis dataKey="periodo" tick={{ fontSize: 11 }} />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    name="Total (Bs)"
-                    stroke="#10b981"
-                    strokeWidth={2.2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="creditos"
-                    name="Créditos (Bs)"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="planes"
-                    name="Planes (Bs)"
-                    stroke="#a855f7"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="anuncios"
-                    name="Anuncios (Bs)"
-                    stroke="#f97316"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartWrapper>
+                    <SimpleTable
+                      headers={[
+                        "Año",
+                        "Total (Bs)",
+                        "Créditos (Bs)",
+                        "Planes (Bs)",
+                        "Anuncios (Bs)",
+                        "Créditos vendidos",
+                      ]}
+                      rows={ingresosAnio.map((r: any) => [
+                        r.anio,
+                        r.ingresos_total_bs,
+                        r.ingresos_bs_creditos,
+                        r.ingresos_bs_planes,
+                        r.ingresos_bs_anuncios,
+                        r.creditos_vendidos_creditos,
+                      ])}
+                    />
+                  </div>
+                </SectionCard>
 
-            <SimpleTable
-              headers={[
-                "Mes",
-                "Total (Bs)",
-                "Créditos (Bs)",
-                "Planes (Bs)",
-                "Anuncios (Bs)",
-                "Créditos vendidos",
-              ]}
-              rows={ingresosMes.map((r: any) => [
-                r.periodo_label,
-                r.ingresos_total_bs,
-                r.ingresos_bs_creditos,
-                r.ingresos_bs_planes,
-                r.ingresos_bs_anuncios,
-                r.creditos_vendidos_creditos,
-              ])}
-            />
-          </div>
-        </SectionCard>
+                {/* 8) Ranking usuarios que más gastaron */}
+                <SectionCard title="Ranking usuarios que más gastaron (créditos, planes, anuncios)">
+                  <div className="space-y-3">
+                    <ChartWrapper>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={rankingGasto.map((r: any) => ({
+                            name: r.full_name ?? r.email,
+                            total: Number(r.gasto_total_bs ?? 0),
+                          }))}
+                          layout="vertical"
+                          margin={{
+                            top: 10,
+                            right: 20,
+                            left: 80,
+                            bottom: 10,
+                          }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            opacity={0.12}
+                          />
+                          <XAxis type="number" />
+                          <YAxis
+                            type="category"
+                            dataKey="name"
+                            width={160}
+                            tick={{ fontSize: 11 }}
+                          />
+                          <Tooltip />
+                          <Bar
+                            dataKey="total"
+                            name="Total (Bs)"
+                            barSize={22}
+                            radius={[6, 6, 6, 6]}
+                            fill="#10b981"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartWrapper>
 
-        {/* 7) Ingresos por año (línea + tabla) */}
-        <SectionCard title="Ingresos por año">
-          <div className="space-y-3">
-            <ChartWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={ingresosAnio.map((r: any) => ({
-                    anio: r.anio,
-                    total: Number(r.ingresos_total_bs ?? 0),
-                    creditos: Number(r.ingresos_bs_creditos ?? 0),
-                    planes: Number(r.ingresos_bs_planes ?? 0),
-                    anuncios: Number(r.ingresos_bs_anuncios ?? 0),
-                  }))}
-                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                  <XAxis dataKey="anio" tick={{ fontSize: 11 }} />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    name="Total (Bs)"
-                    stroke="#10b981"
-                    strokeWidth={2.2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="creditos"
-                    name="Créditos (Bs)"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="planes"
-                    name="Planes (Bs)"
-                    stroke="#a855f7"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="anuncios"
-                    name="Anuncios (Bs)"
-                    stroke="#f97316"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartWrapper>
+                    <SimpleTable
+                      headers={[
+                        "#",
+                        "Usuario",
+                        "Gasto créditos (Bs)",
+                        "Gasto planes (Bs)",
+                        "Gasto anuncios (Bs)",
+                        "Total (Bs)",
+                      ]}
+                      rows={rankingGasto.map((r: any) => [
+                        r.ranking,
+                        r.full_name ?? r.email,
+                        r.gasto_creditos_bs,
+                        r.gasto_planes_bs,
+                        r.gasto_anuncios_bs,
+                        r.gasto_total_bs,
+                      ])}
+                    />
+                  </div>
+                </SectionCard>
 
-            <SimpleTable
-              headers={[
-                "Año",
-                "Total (Bs)",
-                "Créditos (Bs)",
-                "Planes (Bs)",
-                "Anuncios (Bs)",
-                "Créditos vendidos",
-              ]}
-              rows={ingresosAnio.map((r: any) => [
-                r.anio,
-                r.ingresos_total_bs,
-                r.ingresos_bs_creditos,
-                r.ingresos_bs_planes,
-                r.ingresos_bs_anuncios,
-                r.creditos_vendidos_creditos,
-              ])}
-            />
-          </div>
-        </SectionCard>
+                {/* 9) Inflación de créditos por mes */}
+                <SectionCard title="Inflación de créditos por mes">
+                  <div className="space-y-3">
+                    <ChartWrapper>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={inflacionMensual.map((r: any) => ({
+                            periodo: r.periodo_label,
+                            generados: Number(r.creditos_generados ?? 0),
+                            gastados: Number(r.creditos_gastados ?? 0),
+                            inflacion: Number(r.inflacion_neta ?? 0),
+                          }))}
+                          margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            opacity={0.15}
+                          />
+                          <XAxis dataKey="periodo" tick={{ fontSize: 11 }} />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="generados"
+                            name="Generados"
+                            stroke="#10b981"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="gastados"
+                            name="Gastados"
+                            stroke="#ef4444"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="inflacion"
+                            name="Inflación neta"
+                            stroke="#f97316"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </ChartWrapper>
 
-        {/* 8) Ranking usuarios que más gastaron (barras bonitas + tabla) */}
-        <SectionCard title="Ranking usuarios que más gastaron (créditos, planes, anuncios)">
-          <div className="space-y-3">
-            <ChartWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={rankingGasto.map((r: any) => ({
-                    name: r.full_name ?? r.email,
-                    total: Number(r.gasto_total_bs ?? 0),
-                  }))}
-                  layout="vertical"
-                  margin={{
-                    top: 10,
-                    right: 20,
-                    left: 80,
-                    bottom: 10,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
-                  <XAxis type="number" />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={160}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <Tooltip />
-                  <Bar
-                    dataKey="total"
-                    name="Total (Bs)"
-                    barSize={22}
-                    radius={[6, 6, 6, 6]}
-                    fill="#10b981"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartWrapper>
+                    <SimpleTable
+                      headers={[
+                        "Mes",
+                        "Créditos generados",
+                        "Créditos gastados",
+                        "Inflación neta",
+                      ]}
+                      rows={inflacionMensual.map((r: any) => [
+                        r.periodo_label,
+                        r.creditos_generados,
+                        r.creditos_gastados,
+                        r.inflacion_neta,
+                      ])}
+                    />
+                  </div>
+                </SectionCard>
 
-            <SimpleTable
-              headers={[
-                "#",
-                "Usuario",
-                "Gasto créditos (Bs)",
-                "Gasto planes (Bs)",
-                "Gasto anuncios (Bs)",
-                "Total (Bs)",
-              ]}
-              rows={rankingGasto.map((r: any) => [
-                r.ranking,
-                r.full_name ?? r.email,
-                r.gasto_creditos_bs,
-                r.gasto_planes_bs,
-                r.gasto_anuncios_bs,
-                r.gasto_total_bs,
-              ])}
-            />
-          </div>
-        </SectionCard>
+                {/* 10) Créditos ganados vs comprados */}
+                <SectionCard title="Créditos ganados vs comprados por usuario">
+                  <div className="space-y-3">
+                    <ChartWrapper>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={creditosGanVsComp.map((r: any) => ({
+                            name: r.full_name ?? r.email,
+                            comprados: Number(r.creditos_comprados ?? 0),
+                            ganados: Number(r.creditos_ganados ?? 0),
+                          }))}
+                          layout="vertical"
+                          margin={{
+                            top: 10,
+                            right: 20,
+                            left: 80,
+                            bottom: 10,
+                          }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            opacity={0.12}
+                          />
+                          <XAxis type="number" />
+                          <YAxis
+                            type="category"
+                            dataKey="name"
+                            width={160}
+                            tick={{ fontSize: 11 }}
+                          />
+                          <Tooltip />
+                          <Legend />
+                          <Bar
+                            dataKey="comprados"
+                            name="Comprados"
+                            barSize={20}
+                            radius={[6, 6, 6, 6]}
+                            fill="#3b82f6"
+                          />
+                          <Bar
+                            dataKey="ganados"
+                            name="Ganados"
+                            barSize={20}
+                            radius={[6, 6, 6, 6]}
+                            fill="#10b981"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartWrapper>
 
-        {/* 9) Inflación de créditos por mes (línea + tabla) */}
-        <SectionCard title="Inflación de créditos por mes">
-          <div className="space-y-3">
-            <ChartWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={inflacionMensual.map((r: any) => ({
-                    periodo: r.periodo_label,
-                    generados: Number(r.creditos_generados ?? 0),
-                    gastados: Number(r.creditos_gastados ?? 0),
-                    inflacion: Number(r.inflacion_neta ?? 0),
-                  }))}
-                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                  <XAxis dataKey="periodo" tick={{ fontSize: 11 }} />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="generados"
-                    name="Generados"
-                    stroke="#10b981"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="gastados"
-                    name="Gastados"
-                    stroke="#ef4444"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="inflacion"
-                    name="Inflación neta"
-                    stroke="#f97316"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartWrapper>
+                    <SimpleTable
+                      headers={[
+                        "Usuario",
+                        "Créditos comprados",
+                        "Créditos ganados",
+                        "Total créditos",
+                        "% comprados",
+                      ]}
+                      rows={creditosGanVsComp.map((r: any) => [
+                        r.full_name ?? r.email,
+                        r.creditos_comprados,
+                        r.creditos_ganados,
+                        r.total_creditos,
+                        r.porcentaje_comprado,
+                      ])}
+                    />
+                  </div>
+                </SectionCard>
 
-            <SimpleTable
-              headers={[
-                "Mes",
-                "Créditos generados",
-                "Créditos gastados",
-                "Inflación neta",
-              ]}
-              rows={inflacionMensual.map((r: any) => [
-                r.periodo_label,
-                r.creditos_generados,
-                r.creditos_gastados,
-                r.inflacion_neta,
-              ])}
-            />
-          </div>
-        </SectionCard>
+                {/* 11) Usuarios con más créditos acumulados */}
+                <SectionCard title="Usuarios con más créditos acumulados (ranking)">
+                  <div className="space-y-3">
+                    <ChartWrapper>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={rankingCreditosAcum.map((r: any) => ({
+                            name: r.full_name ?? r.email,
+                            saldo: Number(r.saldo_total ?? 0),
+                          }))}
+                          layout="vertical"
+                          margin={{
+                            top: 10,
+                            right: 20,
+                            left: 80,
+                            bottom: 10,
+                          }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            opacity={0.12}
+                          />
+                          <XAxis type="number" />
+                          <YAxis
+                            type="category"
+                            dataKey="name"
+                            width={160}
+                            tick={{ fontSize: 11 }}
+                          />
+                          <Tooltip />
+                          <Bar
+                            dataKey="saldo"
+                            name="Saldo total"
+                            barSize={22}
+                            radius={[6, 6, 6, 6]}
+                            fill="#a855f7"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartWrapper>
 
-        {/* 10) Créditos ganados vs comprados por usuario (barras mejoradas + tabla) */}
-        <SectionCard title="Créditos ganados vs comprados por usuario">
-          <div className="space-y-3">
-            <ChartWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={creditosGanVsComp.map((r: any) => ({
-                    name: r.full_name ?? r.email,
-                    comprados: Number(r.creditos_comprados ?? 0),
-                    ganados: Number(r.creditos_ganados ?? 0),
-                  }))}
-                  layout="vertical"
-                  margin={{
-                    top: 10,
-                    right: 20,
-                    left: 80,
-                    bottom: 10,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
-                  <XAxis type="number" />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={160}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <Tooltip />
-                  <Legend />
-                  <Bar
-                    dataKey="comprados"
-                    name="Comprados"
-                    barSize={20}
-                    radius={[6, 6, 6, 6]}
-                    fill="#3b82f6"
-                  />
-                  <Bar
-                    dataKey="ganados"
-                    name="Ganados"
-                    barSize={20}
-                    radius={[6, 6, 6, 6]}
-                    fill="#10b981"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartWrapper>
-
-            <SimpleTable
-              headers={[
-                "Usuario",
-                "Créditos comprados",
-                "Créditos ganados",
-                "Total créditos",
-                "% comprados",
-              ]}
-              rows={creditosGanVsComp.map((r: any) => [
-                r.full_name ?? r.email,
-                r.creditos_comprados,
-                r.creditos_ganados,
-                r.total_creditos,
-                r.porcentaje_comprado,
-              ])}
-            />
-          </div>
-        </SectionCard>
-
-        {/* 11) Usuarios con más créditos acumulados (barras mejoradas + tabla) */}
-        <SectionCard title="Usuarios con más créditos acumulados (ranking)">
-          <div className="space-y-3">
-            <ChartWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={rankingCreditosAcum.map((r: any) => ({
-                    name: r.full_name ?? r.email,
-                    saldo: Number(r.saldo_total ?? 0),
-                  }))}
-                  layout="vertical"
-                  margin={{
-                    top: 10,
-                    right: 20,
-                    left: 80,
-                    bottom: 10,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
-                  <XAxis type="number" />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={160}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <Tooltip />
-                  <Bar
-                    dataKey="saldo"
-                    name="Saldo total"
-                    barSize={22}
-                    radius={[6, 6, 6, 6]}
-                    fill="#a855f7"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartWrapper>
-
-            <SimpleTable
-              headers={["#", "Usuario", "Saldo total de créditos"]}
-              rows={rankingCreditosAcum.map((r: any) => [
-                r.ranking,
-                r.full_name ?? r.email,
-                r.saldo_total,
-              ])}
-            />
-          </div>
-        </SectionCard>
-      </>
-    );
-  })()}
+                    <SimpleTable
+                      headers={["#", "Usuario", "Saldo total de créditos"]}
+                      rows={rankingCreditosAcum.map((r: any) => [
+                        r.ranking,
+                        r.full_name ?? r.email,
+                        r.saldo_total,
+                      ])}
+                    />
+                  </div>
+                </SectionCard>
+              </>
+            );
+          })()}
 
         {/* ============== IMPACTO AMBIENTAL ============== */}
         {activeTab === "Impacto Ambiental" && impacto && (
           <>
             <SectionCard title="Totales globales">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <KPI
-                  label="CO₂ evitado (kg)"
-                  value={impacto.totales.total_co2_evitado}
-                />
-                <KPI
-                  label="Energía ahorrada (kWh)"
-                  value={impacto.totales.total_energia_ahorrada}
-                />
-                <KPI
-                  label="Agua preservada (L)"
-                  value={impacto.totales.total_agua_preservada}
-                />
-                <KPI
-                  label="Residuos evitados (kg)"
-                  value={impacto.totales.total_residuos_evitados}
-                />
+              <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
+                  <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2">
+
+                  <KPI
+                    label="CO₂ evitado (kg)"
+                    value={impacto.totales.total_co2_evitado}
+                  />
+                  <KPI
+                    label="Energía ahorrada (kWh)"
+                    value={impacto.totales.total_energia_ahorrada}
+                  />
+                  <KPI
+                    label="Agua preservada (L)"
+                    value={impacto.totales.total_agua_preservada}
+                  />
+                  <KPI
+                    label="Residuos evitados (kg)"
+                    value={impacto.totales.total_residuos_evitados}
+                  />
+                </div>
+                <ChartWrapper>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        {
+                          name: "CO₂ (kg)",
+                          valor: Number(
+                            impacto.totales.total_co2_evitado ?? 0
+                          ),
+                        },
+                        {
+                          name: "Energía (kWh)",
+                          valor: Number(
+                            impacto.totales.total_energia_ahorrada ?? 0
+                          ),
+                        },
+                        {
+                          name: "Agua (L)",
+                          valor: Number(
+                            impacto.totales.total_agua_preservada ?? 0
+                          ),
+                        },
+                        {
+                          name: "Residuos (kg)",
+                          valor: Number(
+                            impacto.totales.total_residuos_evitados ?? 0
+                          ),
+                        },
+                      ]}
+                      margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar
+                        dataKey="valor"
+                        name="Valor"
+                        barSize={26}
+                        radius={[8, 8, 8, 8]}
+                        fill="#10b981"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartWrapper>
               </div>
             </SectionCard>
 
@@ -1187,27 +1546,91 @@ export default function AdminReportsPage() {
                 ])}
               />
             </SectionCard>
+{/* TORTA: impacto por categoría (agregado por categoría) */}
+{(() => {
+  // 1) Agregamos impacto_total por categoría para que no se repita en el gráfico
+  const agregados: Record<string, number> = {};
 
-            <SectionCard title="Impacto por rol">
-              <SimpleTable
-                headers={[
-                  "Rol",
-                  "Usuarios",
-                  "CO₂ (kg)",
-                  "Energía",
-                  "Agua",
-                  "Residuos",
-                ]}
-                rows={(impacto.por_rol ?? []).map((r) => [
-                  r.rol_nombre,
-                  r.total_usuarios,
-                  r.total_co2_evitado,
-                  r.total_energia_ahorrada,
-                  r.total_agua_preservada,
-                  r.total_residuos_evitados,
-                ])}
+  (impacto.por_categoria ?? []).forEach((r: any) => {
+    const nombre = r.categoria_nombre || "Sin categoría";
+    const valor = Number(r.impacto_total ?? 0);
+    agregados[nombre] = (agregados[nombre] ?? 0) + valor;
+  });
+
+  let data = Object.entries(agregados).map(([name, value]) => ({
+    name,
+    value,
+  }));
+
+  // 2) Ordenamos de mayor a menor y agrupamos en "Otros" si hay muchas categorías
+  data.sort((a, b) => b.value - a.value);
+
+  const maxSlices = 8;
+  let pieData = data;
+  if (data.length > maxSlices) {
+    const top = data.slice(0, maxSlices);
+    const resto = data.slice(maxSlices);
+    const sumaResto = resto.reduce((acc, d) => acc + d.value, 0);
+    pieData = [...top, { name: "Otros", value: sumaResto }];
+  }
+
+  return (
+    <SectionCard title="Impacto por categoría">
+      <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
+        <ChartWrapper>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={pieData}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={45}
+                outerRadius={80}
+                paddingAngle={4}
+              >
+                {pieData.map((_, idx) => (
+                  <Cell
+                    key={idx}
+                    fill={CHART_COLORS[idx % CHART_COLORS.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend
+                layout="vertical"
+                align="right"
+                verticalAlign="middle"
+                wrapperStyle={{
+                  fontSize: 11,
+                  paddingLeft: 8,
+                }}
               />
-            </SectionCard>
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartWrapper>
+
+        {/* La tabla se mantiene con el detalle completo por factor */}
+        <SimpleTable
+          headers={[
+            "Categoría",
+            "Factor",
+            "Unidad",
+            "Impacto total",
+            "Peso total (kg)",
+          ]}
+          rows={(impacto.por_categoria ?? []).map((r) => [
+            r.categoria_nombre,
+            r.nombre_factor,
+            r.unidad_medida,
+            r.impacto_total,
+            r.peso_total_kg,
+          ])}
+        />
+      </div>
+    </SectionCard>
+  );
+})()}
+
 
             <SectionCard title="Ranking usuarios por impacto (TOP 10)">
               <SimpleTable
@@ -1217,25 +1640,6 @@ export default function AdminReportsPage() {
                   r.full_name ?? r.email,
                   r.total_co2_evitado,
                   r.total_creditos_ganados,
-                ])}
-              />
-            </SectionCard>
-
-            <SectionCard title="Impacto por categoría">
-              <SimpleTable
-                headers={[
-                  "Categoría",
-                  "Factor",
-                  "Unidad",
-                  "Impacto total",
-                  "Peso total (kg)",
-                ]}
-                rows={(impacto.por_categoria ?? []).map((r) => [
-                  r.categoria_nombre,
-                  r.nombre_factor,
-                  r.unidad_medida,
-                  r.impacto_total,
-                  r.peso_total_kg,
                 ])}
               />
             </SectionCard>
@@ -1286,23 +1690,94 @@ export default function AdminReportsPage() {
             </SectionCard>
 
             <SectionCard title="Conteo por estado">
-              <SimpleTable
-                headers={["Estado", "Total"]}
-                rows={(intercambios.estados_conteo ?? []).map((r) => [
-                  r.estado,
-                  r.total,
-                ])}
-              />
+              <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
+                <ChartWrapper>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={(intercambios.estados_conteo ?? []).map(
+                          (r: any) => ({
+                            name: r.estado,
+                            value: Number(r.total ?? 0),
+                          })
+                        )}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={45}
+                        outerRadius={80}
+                        paddingAngle={4}
+                      >
+                        {(intercambios.estados_conteo ?? []).map(
+                          (_: any, idx: number) => (
+                            <Cell
+                              key={idx}
+                              fill={
+                                CHART_COLORS[idx % CHART_COLORS.length]
+                              }
+                            />
+                          )
+                        )}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartWrapper>
+                <SimpleTable
+                  headers={["Estado", "Total"]}
+                  rows={(intercambios.estados_conteo ?? []).map((r) => [
+                    r.estado,
+                    r.total,
+                  ])}
+                />
+              </div>
             </SectionCard>
 
+            {/* TORTA: intercambios por categoría */}
             <SectionCard title="Intercambios por categoría">
-              <SimpleTable
-                headers={["Categoría", "Intercambios completados"]}
-                rows={(intercambios.por_categoria ?? []).map((r) => [
-                  r.categoria_nombre,
-                  r.intercambios_completados,
-                ])}
-              />
+              <div className="grid gap-4 lg:grid-cols-[1.3fr,1fr]">
+                <ChartWrapper>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={(intercambios.por_categoria ?? []).map(
+                          (r: any) => ({
+                            name: r.categoria_nombre,
+                            value: Number(
+                              r.intercambios_completados ?? 0
+                            ),
+                          })
+                        )}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={45}
+                        outerRadius={80}
+                        paddingAngle={4}
+                      >
+                        {(intercambios.por_categoria ?? []).map(
+                          (_: any, idx: number) => (
+                            <Cell
+                              key={idx}
+                              fill={
+                                CHART_COLORS[idx % CHART_COLORS.length]
+                              }
+                            />
+                          )
+                        )}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartWrapper>
+                <SimpleTable
+                  headers={["Categoría", "Intercambios completados"]}
+                  rows={(intercambios.por_categoria ?? []).map((r) => [
+                    r.categoria_nombre,
+                    r.intercambios_completados,
+                  ])}
+                />
+              </div>
             </SectionCard>
 
             <SectionCard title="Categorías más populares (TOP 10)">
@@ -1317,13 +1792,44 @@ export default function AdminReportsPage() {
             </SectionCard>
 
             <SectionCard title="Intercambios por ubicación">
-              <SimpleTable
-                headers={["Ubicación", "Intercambios completados"]}
-                rows={(intercambios.por_ubicacion ?? []).map((r) => [
-                  r.ubicacion_texto,
-                  r.intercambios_completados,
-                ])}
-              />
+              <div className="grid gap-4 lg:grid-cols-[1.3fr,1fr]">
+                <ChartWrapper>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={(intercambios.por_ubicacion ?? []).map(
+                        (r: any) => ({
+                          name: r.ubicacion_texto,
+                          total: Number(r.intercambios_completados ?? 0),
+                        })
+                      )}
+                      margin={{ top: 10, right: 20, left: 0, bottom: 40 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 10 }}
+                        interval={0}
+                      />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar
+                        dataKey="total"
+                        name="Intercambios completados"
+                        barSize={24}
+                        radius={[8, 8, 8, 8]}
+                        fill="#3b82f6"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartWrapper>
+                <SimpleTable
+                  headers={["Ubicación", "Intercambios completados"]}
+                  rows={(intercambios.por_ubicacion ?? []).map((r) => [
+                    r.ubicacion_texto,
+                    r.intercambios_completados,
+                  ])}
+                />
+              </div>
             </SectionCard>
           </>
         )}
@@ -1336,14 +1842,25 @@ export default function AdminReportsPage() {
 
 function KPI({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="flex flex-col rounded-xl bg-neutral-900/70 px-3 py-2">
-      <span className="text-xs text-neutral-400">{label}</span>
-      <span className="text-sm font-semibold text-neutral-50">
+    <div
+      className="
+        flex h-full flex-col justify-between
+        rounded-3xl border border-emerald-500/10
+        bg-gradient-to-br from-neutral-900/90 via-neutral-900/60 to-black/70
+        px-5 py-4 md:px-6 md:py-5
+        shadow-[0_0_28px_rgba(15,23,42,0.75)]
+      "
+    >
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400 md:text-xs">
+        {label}
+      </span>
+      <span className="mt-2 text-2xl font-semibold text-neutral-50 tabular-nums md:text-3xl">
         {value ?? "-"}
       </span>
     </div>
   );
 }
+
 
 function ChartWrapper({ children }: { children: ReactNode }) {
   return (

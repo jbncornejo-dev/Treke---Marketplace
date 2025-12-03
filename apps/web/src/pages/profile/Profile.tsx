@@ -1,22 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { 
-  Settings, 
-  FileText, 
-  Wallet, 
-  Repeat, 
-  Leaf, 
-  Star, 
-  MapPin, 
-  Calendar, 
+import {
+  Settings,
+  FileText,
+  Wallet,
+  Repeat,
+  Leaf,
+  Star,
+  MapPin,
+  Calendar,
   Heart,
   Package,
   History,
   MessageSquare,
-  ShieldAlert, 
+  ShieldAlert,
   Megaphone,
+  Trophy,
 } from "lucide-react";
-import { fetchPanel, getCurrentUserId, type PanelResponse } from "../../api/profile";
+
+import {
+  fetchPanel,
+  getCurrentUserId,
+  type PanelResponse,
+} from "../../api/profile";
 import AdsFooter from "../../components/AdsFooter";
 
 // Tipo Tab
@@ -135,7 +141,7 @@ export default function Profile() {
                   )}
                 </div>
               </div>
-              {/* Badge Nivel (Simulado) */}
+              {/* Badge Nivel (Simulado, ahora real puedes usar gamificación luego) */}
               <div className="absolute bottom-1 right-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-white shadow-sm">
                 Nivel 1
               </div>
@@ -202,6 +208,16 @@ export default function Profile() {
                       <span>Crear anuncio</span>
                     </Link>
                   )}
+
+                  {/* NUEVO: botón a módulo de gamificación */}
+                  <Link
+                    to="/perfil/gamificacion"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-500/90 hover:bg-violet-400 text-white font-medium shadow-lg shadow-violet-500/30 transition-all hover:-translate-y-0.5"
+                    title="Ver tus puntos, niveles y logros"
+                  >
+                    <Trophy size={18} />
+                    <span>Puntos &amp; logros</span>
+                  </Link>
 
                   <Link
                     to="/settings"

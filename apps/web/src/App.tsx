@@ -19,6 +19,12 @@ import AdminAdsPage from "./pages/admin/AdminAdsPage";
 
 import SettingsPage from "./pages/profile/SettingsPage";
 
+import GamificacionProfile from "./pages/profile/GamificacionProfile";
+
+// ...
+
+
+
 
 import "./index.css";
 
@@ -124,11 +130,14 @@ export default function App() {
               <AdminReportsPage />
             </AdminRoute>
           } />
+          <Route path="/perfil/gamificacion" element={<GamificacionProfile />} />
           
           <Route path="/admin/anuncios" element={
                <AdminRoute>
           <AdminAdsPage />
           </AdminRoute>
+
+          
   }
 />
 

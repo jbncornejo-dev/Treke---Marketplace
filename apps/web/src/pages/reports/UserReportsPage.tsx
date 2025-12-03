@@ -20,6 +20,19 @@ import {
 
 import { getCurrentUserId } from "../../api/profile";
 
+// NUEVO: Recharts para barras más detalladas
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LabelList,
+  Cell,
+} from "recharts";
+
 type Status = "idle" | "loading" | "success" | "error";
 
 export default function UserReportsPage() {
@@ -93,14 +106,14 @@ export default function UserReportsPage() {
   const compras = data?.compras_creditos ?? null;
   const movimientos = data?.movimientos ?? [];
   const impacto = data?.impacto_ambiental ?? null;
-  const suscripcion = (data as any)?.suscripcion_resumen ?? null; // por si tu tipo aún no lo tiene
+  const suscripcion = (data as any)?.suscripcion_resumen ?? null;
 
   const movimientosTop10 = useMemo(
     () => movimientos.slice(0, 10),
     [movimientos]
   );
 
-  // Max para rankings (para altura de barras)
+  // Max para rankings (ejes Y)
   const maxIntercambios = useMemo(
     () =>
       topIntercambios.reduce(
@@ -116,40 +129,26 @@ export default function UserReportsPage() {
     [topPuntaje]
   );
 
-  // Max para series
-  const maxCreditos = useMemo(() => {
-    if (seriesCreditos.length === 0) return 0;
-    return seriesCreditos.reduce((max, s) => {
-      const localMax = Math.max(
-        s.creditos_ingresados || 0,
-        s.creditos_gastados || 0
-      );
-      return localMax > max ? localMax : max;
-    }, 0);
-  }, [seriesCreditos]);
-
-  const maxIntercambiosMes = useMemo(() => {
-    if (seriesIntercambios.length === 0) return 0;
-    return seriesIntercambios.reduce(
-      (max, s) =>
-        s.total_intercambios > max ? s.total_intercambios : max,
-      0
-    );
-  }, [seriesIntercambios]);
-
-  const maxPuntosMes = useMemo(() => {
-    if (seriesPuntos.length === 0) return 0;
-    return seriesPuntos.reduce(
-      (max, s) => (s.puntos_mes > max ? s.puntos_mes : max),
-      0
-    );
-  }, [seriesPuntos]);
-
   const formatPeriodoLabel = (label: string) => {
     if (!label.includes("-")) return label;
     const [year, month] = label.split("-");
-    return `${month}/${year.slice(2)}`;
+    return `${month}/${year}`; // 11/2025
   };
+
+  // Datos transformados para los gráficos de barras
+  const dataIntercambios = topIntercambios.map((row) => ({
+    name: row.display_name,
+    valor: row.intercambios,
+    esActual: row.usuario_id === resumen?.usuario_id,
+    rank: row.rank_intercambios,
+  }));
+
+  const dataPuntaje = topPuntaje.map((row) => ({
+    name: row.display_name,
+    valor: row.puntaje,
+    esActual: row.usuario_id === resumen?.usuario_id,
+    rank: row.rank_puntaje,
+  }));
 
   return (
     <div className="flex min-h-screen flex-col bg-neutral-950 text-neutral-50">
@@ -186,7 +185,7 @@ export default function UserReportsPage() {
 
         {status === "success" && data && (
           <>
-            {/* 1) KPIs rápidos (ahora más grandes por el KPICard) */}
+            {/* 1) KPIs rápidos */}
             <section className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
               <KPICard
                 label="Créditos totales en billetera"
@@ -343,7 +342,7 @@ export default function UserReportsPage() {
               </SectionCard>
             </section>
 
-            {/* 3) Rankings con gráfico de barras vertical */}
+            {/* 3) Rankings con gráficos de barras detallados */}
             <section className="space-y-4">
               <h2 className="text-base font-semibold text-slate-100">
                 Rankings de la comunidad
@@ -351,60 +350,76 @@ export default function UserReportsPage() {
 
               {/* Top por intercambios */}
               <SectionCard title="Top 10 por intercambios completados">
-                {topIntercambios.length === 0 ? (
+                {dataIntercambios.length === 0 ? (
                   <p className="text-sm text-slate-400">
                     Aún no hay suficiente actividad para mostrar el ranking.
                   </p>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="flex h-56 items-end gap-3 overflow-x-auto pb-2">
-                      {topIntercambios.map((row) => {
-                        const esActual =
-                          row.usuario_id === resumen?.usuario_id;
-                        const pct =
-                          maxIntercambios > 0
-                            ? (row.intercambios / maxIntercambios) * 100
-                            : 0;
-
-                        return (
-                          <div
-                            key={`bar-inter-${row.usuario_id}`}
-                            className="flex flex-col items-center gap-1"
-                          >
-                            <div className="flex h-40 w-8 items-end rounded-xl bg-slate-900/70">
-                              <div
-                                className={`w-full rounded-xl bg-gradient-to-t ${
-                                  esActual
-                                    ? "from-emerald-400 to-emerald-200"
-                                    : "from-emerald-700 to-emerald-400"
-                                }`}
-                                style={{
-                                  height: `${Math.max(pct, 10)}%`,
-                                }}
-                                title={`${row.display_name}: ${row.intercambios} intercambios`}
-                              />
-                            </div>
-                            <span className="text-[10px] font-semibold text-slate-200">
-                              #{row.rank_intercambios}
-                            </span>
-                            <span className="max-w-[72px] truncate text-[10px] text-slate-300">
-                              {row.display_name}
-                            </span>
-                            <span className="text-[11px] font-semibold text-emerald-300">
-                              {row.intercambios}
-                            </span>
-                            {esActual && (
-                              <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-semibold text-emerald-200">
-                                Tú
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      Barras más altas = más intercambios completados. La barra
-                      verde clara indica tu posición.
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={dataIntercambios}
+                        margin={{ top: 10, right: 10, left: 0, bottom: 40 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="#1e293b"
+                          opacity={0.4}
+                        />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fontSize: 10, fill: "#cbd5f5" }}
+                          interval={0}
+                          tickMargin={10}
+                          height={40}
+                          tickFormatter={(v: string) =>
+                            v.length > 10 ? v.slice(0, 10) + "…" : v
+                          }
+                        />
+                        <YAxis
+                          allowDecimals={false}
+                          domain={[0, maxIntercambios || "auto"]}
+                          tick={{ fontSize: 10, fill: "#cbd5f5" }}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#020617",
+                            border: "1px solid #1f2937",
+                            borderRadius: 8,
+                            fontSize: 12,
+                          }}
+                          labelStyle={{ color: "#e5e7eb" }}
+                          formatter={(value: any, _name, props: any) => [
+                            `${value} intercambios`,
+                            `#${props.payload.rank} ${props.payload.name}`,
+                          ]}
+                        />
+                        <Bar
+                          dataKey="valor"
+                          radius={[8, 8, 0, 0]}
+                          maxBarSize={32}
+                        >
+                          {dataIntercambios.map((entry, index) => (
+                            <Cell
+                              key={`cell-inter-${index}`}
+                              fill={
+                                entry.esActual ? "#22c55e" : "#38bdf8"
+                              }
+                            />
+                          ))}
+                          <LabelList
+                            dataKey="valor"
+                            position="top"
+                            className="text-[10px]"
+                            fill="#e5e7eb"
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <p className="mt-2 text-[11px] text-slate-400">
+                      Eje X: usuarios · Eje Y: cantidad de intercambios
+                      completados. Tu barra aparece en verde intenso si estás
+                      en el top.
                     </p>
                   </div>
                 )}
@@ -412,247 +427,169 @@ export default function UserReportsPage() {
 
               {/* Top por puntaje */}
               <SectionCard title="Top 10 por puntaje (gamificación)">
-                {topPuntaje.length === 0 ? (
+                {dataPuntaje.length === 0 ? (
                   <p className="text-sm text-slate-400">
                     Aún no hay suficiente actividad para mostrar el ranking de
                     puntaje.
                   </p>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="flex h-56 items-end gap-3 overflow-x-auto pb-2">
-                      {topPuntaje.map((row) => {
-                        const esActual =
-                          row.usuario_id === resumen?.usuario_id;
-                        const pct =
-                          maxPuntaje > 0
-                            ? (row.puntaje / maxPuntaje) * 100
-                            : 0;
-
-                        return (
-                          <div
-                            key={`bar-punt-${row.usuario_id}`}
-                            className="flex flex-col items-center gap-1"
-                          >
-                            <div className="flex h-40 w-8 items-end rounded-xl bg-slate-900/70">
-                              <div
-                                className={`w-full rounded-xl bg-gradient-to-t ${
-                                  esActual
-                                    ? "from-sky-400 to-sky-200"
-                                    : "from-sky-700 to-sky-400"
-                                }`}
-                                style={{
-                                  height: `${Math.max(pct, 10)}%`,
-                                }}
-                                title={`${row.display_name}: ${row.puntaje} pts`}
-                              />
-                            </div>
-                            <span className="text-[10px] font-semibold text-slate-200">
-                              #{row.rank_puntaje}
-                            </span>
-                            <span className="max-w-[72px] truncate text-[10px] text-slate-300">
-                              {row.display_name}
-                            </span>
-                            <span className="text-[11px] font-semibold text-sky-300">
-                              {row.puntaje}
-                            </span>
-                            {esActual && (
-                              <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-[9px] font-semibold text-sky-200">
-                                Tú
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      El puntaje resume tus acciones de gamificación (registro,
-                      publicaciones, intercambios, reseñas, referidos, etc.).
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={dataPuntaje}
+                        margin={{ top: 10, right: 10, left: 0, bottom: 40 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="#1e293b"
+                          opacity={0.4}
+                        />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fontSize: 10, fill: "#cbd5f5" }}
+                          interval={0}
+                          tickMargin={10}
+                          height={40}
+                          tickFormatter={(v: string) =>
+                            v.length > 10 ? v.slice(0, 10) + "…" : v
+                          }
+                        />
+                        <YAxis
+                          allowDecimals={false}
+                          domain={[0, maxPuntaje || "auto"]}
+                          tick={{ fontSize: 10, fill: "#cbd5f5" }}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#020617",
+                            border: "1px solid #1f2937",
+                            borderRadius: 8,
+                            fontSize: 12,
+                          }}
+                          labelStyle={{ color: "#e5e7eb" }}
+                          formatter={(value: any, _name, props: any) => [
+                            `${value} pts`,
+                            `#${props.payload.rank} ${props.payload.name}`,
+                          ]}
+                        />
+                        <Bar
+                          dataKey="valor"
+                          radius={[8, 8, 0, 0]}
+                          maxBarSize={32}
+                        >
+                          {dataPuntaje.map((entry, index) => (
+                            <Cell
+                              key={`cell-punt-${index}`}
+                              fill={
+                                entry.esActual ? "#38bdf8" : "#6366f1"
+                              }
+                            />
+                          ))}
+                          <LabelList
+                            dataKey="valor"
+                            position="top"
+                            className="text-[10px]"
+                            fill="#e5e7eb"
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <p className="mt-2 text-[11px] text-slate-400">
+                      Eje X: usuarios · Eje Y: puntaje total de gamificación.
+                      Los valores aparecen sobre cada barra para mayor
+                      precisión.
                     </p>
                   </div>
                 )}
               </SectionCard>
             </section>
 
-            {/* 4) Gráficos de series (opcional, ya estaban) */}
-            <section className="grid gap-4 lg:grid-cols-3">
+            {/* 4) Resumen por periodo (KPIs, sin gráficos) */}
+            <section className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {/* Créditos por mes */}
-              <SectionCard title="Créditos por mes">
-                {seriesCreditos.length === 0 || maxCreditos === 0 ? (
-                  <p className="text-sm text-slate-400">
-                    Aún no hay suficiente historial de créditos para mostrar el
-                    gráfico.
-                  </p>
-                ) : (
-                  <>
-                    <div className="flex h-48 items-end gap-2 overflow-x-auto">
-                      {seriesCreditos.map((s) => {
-                        const inPct =
-                          (s.creditos_ingresados / maxCreditos) * 100 || 0;
-                        const outPct =
-                          (s.creditos_gastados / maxCreditos) * 100 || 0;
-
-                        return (
-                          <div
-                            key={`cred-${s.periodo_label}`}
-                            className="flex flex-col items-center gap-1"
-                          >
-                            <div className="flex h-32 w-6 flex-col justify-end gap-0.5">
-                              <div
-                                className="w-full rounded-t-md bg-emerald-400"
-                                style={{ height: `${Math.max(inPct, 6)}%` }}
-                                title={`Ingresados: ${s.creditos_ingresados}`}
-                              />
-                              <div
-                                className="w-full rounded-b-md bg-sky-400"
-                                style={{ height: `${Math.max(outPct, 6)}%` }}
-                                title={`Gastados: ${s.creditos_gastados}`}
-                              />
-                            </div>
-                            <span className="text-[10px] text-slate-300">
-                              {formatPeriodoLabel(s.periodo_label)}
-                            </span>
-                          </div>
+              <KPICard
+                label="Créditos por mes"
+                value={
+                  seriesCreditos.length > 0
+                    ? Number(
+                        seriesCreditos[seriesCreditos.length - 1]
+                          .creditos_ingresados ?? 0
+                      )
+                    : 0
+                }
+                helperText={
+                  seriesCreditos.length > 0
+                    ? (() => {
+                        const last =
+                          seriesCreditos[seriesCreditos.length - 1];
+                        const periodo = formatPeriodoLabel(
+                          last.periodo_label
                         );
-                      })}
-                    </div>
-                    <p className="mt-2 text-[11px] text-slate-400">
-                      Verde: créditos que ingresaron a tu billetera. Azul:
-                      créditos gastados.
-                    </p>
-                  </>
-                )}
-              </SectionCard>
+                        const ingresados = last.creditos_ingresados ?? 0;
+                        const gastados = last.creditos_gastados ?? 0;
+                        return `Último mes (${periodo}): +${ingresados} ingresados · -${gastados} gastados`;
+                      })()
+                    : "Todavía no hay historial mensual de créditos."
+                }
+              />
 
               {/* Intercambios por mes */}
-              <SectionCard title="Intercambios por mes">
-                {seriesIntercambios.length === 0 ||
-                maxIntercambiosMes === 0 ? (
-                  <p className="text-sm text-slate-400">
-                    Aún no hay suficiente historial de intercambios.
-                  </p>
-                ) : (
-                  <>
-                    <div className="flex h-48 items-end gap-2 overflow-x-auto">
-                      {seriesIntercambios.map((s) => {
-                        const compPct =
-                          (s.intercambios_completados /
-                            (maxIntercambiosMes || 1)) *
-                          100;
-                        const pendPct =
-                          (s.intercambios_pendientes /
-                            (maxIntercambiosMes || 1)) *
-                          100;
-
-                        return (
-                          <div
-                            key={`int-${s.periodo_label}`}
-                            className="flex flex-col items-center gap-1"
-                          >
-                            <div className="flex h-32 w-6 flex-col justify-end">
-                              <div
-                                className="w-full rounded-t-md bg-emerald-400"
-                                style={{ height: `${Math.max(compPct, 6)}%` }}
-                                title={`Completados: ${s.intercambios_completados}`}
-                              />
-                              <div
-                                className="w-full rounded-b-md bg-amber-400"
-                                style={{ height: `${Math.max(pendPct, 0)}%` }}
-                                title={`Activos/pendientes: ${s.intercambios_pendientes}`}
-                              />
-                            </div>
-                            <span className="text-[10px] text-slate-300">
-                              {formatPeriodoLabel(s.periodo_label)}
-                            </span>
-                          </div>
+              <KPICard
+                label="Intercambios por mes"
+                value={
+                  seriesIntercambios.length > 0
+                    ? Number(
+                        seriesIntercambios[seriesIntercambios.length - 1]
+                          .total_intercambios ?? 0
+                      )
+                    : 0
+                }
+                helperText={
+                  seriesIntercambios.length > 0
+                    ? (() => {
+                        const last =
+                          seriesIntercambios[
+                            seriesIntercambios.length - 1
+                          ];
+                        const periodo = formatPeriodoLabel(
+                          last.periodo_label
                         );
-                      })}
-                    </div>
-                    <p className="mt-2 text-[11px] text-slate-400">
-                      Verde: intercambios completados. Amarillo: activos o
-                      pendientes.
-                    </p>
-                  </>
-                )}
-              </SectionCard>
+                        const completados =
+                          last.intercambios_completados ?? 0;
+                        const pendientes =
+                          last.intercambios_pendientes ?? 0;
+                        return `Último mes (${periodo}): ${completados} completados · ${pendientes} pendientes`;
+                      })()
+                    : "Todavía no hay historial mensual de intercambios."
+                }
+              />
 
-              {/* Puntos por mes */}
-              <SectionCard title="Puntos ganados por mes">
-                {seriesPuntos.length === 0 || maxPuntosMes === 0 ? (
-                  <p className="text-sm text-slate-400">
-                    Todavía no acumulas suficientes acciones para mostrar la
-                    curva de puntos.
-                  </p>
-                ) : (
-                  <>
-                    <div className="h-44 w-full">
-                      <svg
-                        viewBox="0 0 100 100"
-                        className="h-full w-full text-emerald-400"
-                        preserveAspectRatio="none"
-                      >
-                        <line
-                          x1="0"
-                          y1="100"
-                          x2="100"
-                          y2="100"
-                          className="stroke-slate-600"
-                          strokeWidth={0.5}
-                        />
-                        {seriesPuntos.length > 1 && (
-                          <polyline
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={1.4}
-                            strokeLinejoin="round"
-                            strokeLinecap="round"
-                            points={seriesPuntos
-                              .map((s, idx) => {
-                                const x =
-                                  (idx /
-                                    (seriesPuntos.length - 1 || 1)) *
-                                  100;
-                                const y =
-                                  100 -
-                                  (s.puntos_mes / (maxPuntosMes || 1)) *
-                                    90;
-                                return `${x},${y}`;
-                              })
-                              .join(" ")}
-                          />
-                        )}
-                        {seriesPuntos.map((s, idx) => {
-                          const x =
-                            (idx /
-                              (Math.max(seriesPuntos.length - 1, 1))) *
-                            100;
-                          const y =
-                            100 -
-                            (s.puntos_mes / (maxPuntosMes || 1)) * 90;
-                          return (
-                            <circle
-                              key={`pt-${s.periodo_label}`}
-                              cx={x}
-                              cy={y}
-                              r={1.4}
-                              className="fill-emerald-400"
-                            />
-                          );
-                        })}
-                      </svg>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-300">
-                      {seriesPuntos.map((s) => (
-                        <span key={`lbl-${s.periodo_label}`}>
-                          {formatPeriodoLabel(s.periodo_label)}:{" "}
-                          <span className="font-semibold text-emerald-300">
-                            {s.puntos_mes} pts
-                          </span>
-                        </span>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </SectionCard>
+              {/* Puntos ganados por mes */}
+              <KPICard
+                label="Puntos ganados por mes"
+                value={
+                  seriesPuntos.length > 0
+                    ? Number(
+                        seriesPuntos[seriesPuntos.length - 1].puntos_mes ??
+                          0
+                      )
+                    : 0
+                }
+                helperText={
+                  seriesPuntos.length > 0
+                    ? (() => {
+                        const last =
+                          seriesPuntos[seriesPuntos.length - 1];
+                        const periodo = formatPeriodoLabel(
+                          last.periodo_label
+                        );
+                        return `Último mes (${periodo}): ${
+                          last.puntos_mes ?? 0
+                        } puntos acumulados.`;
+                      })()
+                    : "Todavía no hay historial mensual de puntos."
+                }
+              />
             </section>
 
             {/* 5) Historial de movimientos */}
