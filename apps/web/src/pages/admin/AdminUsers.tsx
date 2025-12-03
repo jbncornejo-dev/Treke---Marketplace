@@ -1,300 +1,244 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom"; // 👈 NUEVO
-import { 
-  Users, 
-  Search, 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  ShieldAlert, 
-  CheckCircle,
-  Loader2,
-  X
+import { Link } from "react-router-dom";
+import {
+  ShieldCheck,
+  BarChart3,
+  Megaphone,
+  Trophy,
+  Users,
+  Settings,
+  Bell,
+  Package,
+  Heart,
+  History,
+  Leaf,
+  MessageSquare,
+  Wallet,
+  Star
 } from "lucide-react";
-import * as Admin from "../../api/admin";
 
-export default function AdminUsers() {
-  const [rows, setRows] = useState<Admin.Usuario[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{type: 'success'|'error', text: string}|null>(null);
-  const [filter, setFilter] = useState("");
+import {
+  fetchPanel,
+  getCurrentUserId,
+  type PanelResponse,
+} from "../../api/profile";
 
-  // Crear usuario
-  const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ email:"", full_name:"", password:"", rol_id:10001, acepta_terminos:true });
-  
-  // Editar usuario
-  const [edit, setEdit] = useState<{ id:number; full_name:string; email:string; rol_id:number }|null>(null);
+// Tipo Tab
+type Tab = "pubs" | "movs" | "impact" | "reviews" | "favs";
 
-  // Carga inicial
-  useEffect(() => { refresh(); }, []);
+export default function AdminProfile() {
+  const [data, setData] = useState<PanelResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("pubs");
 
-  async function refresh() {
-    setLoading(true);
-    try {
-      const data = await Admin.listarUsuarios();
-      setRows(data);
-    } catch (e:any) {
-      setMsg({ type: 'error', text: e?.message || "Error al cargar usuarios" });
-    } finally {
-      setLoading(false);
-    }
-  }
+  useEffect(() => {
+    const id = getCurrentUserId();
+    if (!id) return;
 
-  // --- HANDLERS ---
+    (async () => {
+      try {
+        setLoading(true);
+        // Traemos todo: publicaciones, movimientos, favoritos, etc.
+        const d = await fetchPanel(id, { pubs_limit: 12, movs_limit: 20 });
+        setData(d);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    try {
-      await Admin.crearUsuario(form);
-      setForm({ email:"", full_name:"", password:"", rol_id:10001, acepta_terminos:true });
-      setShowCreate(false);
-      await refresh();
-      setMsg({ type: 'success', text: "Usuario creado exitosamente" });
-    } catch (e:any) {
-      setMsg({ type: 'error', text: e?.message || "Error al crear" });
-    }
-  }
+  const nombre = useMemo(() => {
+    if (!data) return "Administrador";
+    return data.usuario.full_name || "Admin";
+  }, [data]);
 
-  async function handleSaveEdit() {
-    if (!edit) return;
-    try {
-      if (edit.full_name) await Admin.updatePerfil(edit.id, { full_name: edit.full_name });
-      if (edit.email) await Admin.updateEmail(edit.id, edit.email);
-      if (edit.rol_id) await Admin.cambiarRol(edit.id, edit.rol_id);
-      setEdit(null);
-      await refresh();
-      setMsg({ type: 'success', text: "Usuario actualizado" });
-    } catch (e:any) {
-      setMsg({ type: 'error', text: e?.message || "Error al actualizar" });
-    }
-  }
+  const saldo = Number(data?.billetera?.saldo_disponible ?? 0);
 
-  async function handleSuspend(id:number) {
-    if (!confirm("¿Suspender a este usuario? No podrá iniciar sesión.")) return;
-    try {
-      await Admin.suspender(id);
-      await refresh();
-      setMsg({ type: 'success', text: "Usuario suspendido" });
-    } catch (e:any) {
-      setMsg({ type: 'error', text: e?.message || "Error al suspender" });
-    }
-  }
-
-  async function handleDelete(id:number) {
-    if (!confirm("¿ELIMINAR DEFINITIVAMENTE? Esta acción no se puede deshacer.")) return;
-    try {
-      await Admin.eliminar(id);
-      await refresh();
-      setMsg({ type: 'success', text: "Usuario eliminado permanentemente" });
-    } catch (e:any) {
-      setMsg({ type: 'error', text: e?.message || "Error al eliminar" });
-    }
-  }
-
-  // Filtrado local
-  const filteredRows = rows.filter(u => 
-    u.email.toLowerCase().includes(filter.toLowerCase()) || 
-    u.full_name?.toLowerCase().includes(filter.toLowerCase())
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-violet-600 border-t-transparent" />
+    </div>
   );
 
-  const roles = useMemo(()=>[
-    {id:10001, label:"Usuario"},
-    {id:10002, label:"Emprendedor"},
-    {id:10003, label:"Administrador"},
-  ],[]);
-
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-20 selection:bg-emerald-100">
+    <div className="min-h-screen bg-gray-50/50 font-sans text-gray-900 pb-20">
       
-      {/* --- HEADER --- */}
-      <div className="bg-white border-b border-gray-200 px-6 py-5">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-           <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2 text-gray-900">
-                 <Users className="text-emerald-600" /> Administración de Usuarios
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Gestiona roles, accesos y estados de la plataforma.
-              </p>
-           </div>
-           
-           <div className="flex items-center gap-3">
-              {/* 👇 Botón para ir al mercado */}
-              <Link
-                to="/market"
-                className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-emerald-200 transition-all shadow-sm"
-              >
-                Ir al mercado
-              </Link>
+      {/* --- HEADER ADMIN (Violeta) --- */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            
+            {/* Info Perfil */}
+            <div className="flex items-center gap-5">
+              <div className="relative">
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-violet-100 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
+                   {data?.usuario.foto ? (
+                      <img src={data.usuario.foto} className="w-full h-full object-cover" />
+                   ) : (
+                      <ShieldCheck size={40} className="text-violet-600" />
+                   )}
+                </div>
+                <div className="absolute -bottom-2 -right-2 bg-violet-600 text-white text-[10px] font-bold px-3 py-1 rounded-full border-2 border-white shadow-sm">
+                   ADMIN
+                </div>
+              </div>
+              
+              <div className="text-center md:text-left">
+                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{nombre}</h1>
+                <div className="flex items-center gap-2 text-sm text-gray-500 mt-1 justify-center md:justify-start">
+                    <span className="flex items-center gap-1"><Wallet size={14} className="text-violet-500"/> {saldo} Créditos</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1"><Star size={14} className="text-amber-400 fill-amber-400"/> {Number(data?.usuario.calificacion_prom).toFixed(1)}</span>
+                </div>
+              </div>
+            </div>
 
-              {/* Botón existente de nuevo usuario */}
-              <button 
-                onClick={() => setShowCreate(true)}
-                className="flex items-center gap-2 bg-gray-900 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-gray-200"
-              >
-                <Plus size={18} /> Nuevo Usuario
-              </button>
-           </div>
+            {/* Acciones Rápidas */}
+            <div className="flex gap-3">
+               <button className="p-3 rounded-xl border border-gray-200 text-gray-500 hover:bg-violet-50 hover:text-violet-600 transition-colors">
+                  <Bell size={20} />
+               </button>
+               <Link to="/settings" className="p-3 rounded-xl border border-gray-200 text-gray-500 hover:bg-violet-50 hover:text-violet-600 transition-colors">
+                  <Settings size={20} />
+               </Link>
+            </div>
+          </div>
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto p-6 space-y-6">
-        
-        {/* Mensajes Feedback */}
-        {msg && (
-           <div className={`p-4 rounded-xl flex items-center gap-2 text-sm font-medium animate-in fade-in slide-in-from-top-2 ${msg.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
-              {msg.type === 'success' ? <CheckCircle size={18}/> : <ShieldAlert size={18}/>}
-              {msg.text}
-              <button onClick={() => setMsg(null)} className="ml-auto opacity-50 hover:opacity-100"><X size={16}/></button>
-           </div>
-        )}
+      <main className="max-w-6xl mx-auto p-6 space-y-10">
 
-        {/* --- FILTROS Y BÚSQUEDA --- */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
-           <Search size={20} className="text-gray-400" />
-           <input 
-              className="flex-1 outline-none text-sm placeholder:text-gray-400" 
-              placeholder="Buscar por nombre o correo..." 
-              value={filter}
-              onChange={e => setFilter(e.target.value)}
-           />
-           <div className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded">
-              {filteredRows.length} resultados
-           </div>
-        </div>
+        {/* --- 1. HERRAMIENTAS DE GESTIÓN (Exclusivo Admin) --- */}
+        <section>
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                Panel de Control
+                <span className="h-px bg-gray-200 flex-1"></span>
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <AdminToolCard to="/admin/usuarios" title="Usuarios" desc="Roles y Accesos" icon={<Users size={24} />} color="violet" />
+                <AdminToolCard to="/admin/reportes" title="Reportes" desc="Métricas Globales" icon={<BarChart3 size={24} />} color="blue" />
+                <AdminToolCard to="/perfil/gamificacion" title="Gamificación" desc="Niveles y Logros" icon={<Trophy size={24} />} color="amber" />
+                <AdminToolCard to="/admin/anuncios" title="Anuncios" desc="Publicidad" icon={<Megaphone size={24} />} color="rose" />
+            </div>
+        </section>
 
-        {/* --- TABLA DE USUARIOS --- */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-           {loading ? (
-              <div className="p-12 flex justify-center text-emerald-600"><Loader2 className="animate-spin" size={32} /></div>
-           ) : (
-              <div className="overflow-x-auto">
-                 <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-500 font-semibold uppercase text-xs">
-                       <tr>
-                          <th className="px-6 py-4">Usuario</th>
-                          <th className="px-6 py-4">Rol</th>
-                          <th className="px-6 py-4">Estado</th>
-                          <th className="px-6 py-4 text-right">Acciones</th>
-                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                       {filteredRows.map(u => (
-                          <tr key={u.id} className="hover:bg-gray-50 transition-colors group">
-                             <td className="px-6 py-4">
-                                <div className="flex flex-col">
-                                   <span className="font-bold text-gray-900">{u.full_name || "Sin nombre"}</span>
-                                   <span className="text-xs text-gray-500">{u.email}</span>
+        {/* --- 2. ACTIVIDAD PERSONAL (Igual que perfil normal) --- */}
+        <section>
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                Tu Actividad Personal
+                <span className="h-px bg-gray-200 flex-1"></span>
+            </h2>
+
+            {/* Tabs de Navegación */}
+            <div className="flex overflow-x-auto no-scrollbar gap-2 mb-6 border-b border-gray-200 pb-1">
+                <TabButton active={tab === "pubs"} onClick={() => setTab("pubs")} icon={<Package size={18} />} label="Publicaciones" />
+                <TabButton active={tab === "favs"} onClick={() => setTab("favs")} icon={<Heart size={18} />} label="Favoritos" />
+                <TabButton active={tab === "movs"} onClick={() => setTab("movs")} icon={<History size={18} />} label="Historial" />
+                <TabButton active={tab === "impact"} onClick={() => setTab("impact")} icon={<Leaf size={18} />} label="Impacto" />
+                <TabButton active={tab === "reviews"} onClick={() => setTab("reviews")} icon={<MessageSquare size={18} />} label="Reseñas" />
+            </div>
+
+            {/* Contenido de Tabs */}
+            <div className="min-h-[300px]">
+                
+                {/* PUBLICACIONES */}
+                {tab === "pubs" && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                        {data?.publicaciones.map((p) => (
+                            <Link to={`/market/${p.id}`} key={p.id} className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1">
+                                <div className="aspect-4/3 bg-gray-100 relative overflow-hidden">
+                                    {p.foto_principal ? (
+                                        <img src={p.foto_principal} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                    ) : ( <div className="w-full h-full flex items-center justify-center text-gray-300"><Package size={24}/></div> )}
+                                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur text-gray-700 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm uppercase">{p.estado_nombre}</div>
                                 </div>
-                             </td>
-                             <td className="px-6 py-4">
-                                <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${
-                                   u.rol_id === 10003 
-                                   ? "bg-purple-50 text-purple-700 border-purple-100" 
-                                   : u.rol_id === 10002 
-                                      ? "bg-blue-50 text-blue-700 border-blue-100" 
-                                      : "bg-gray-100 text-gray-600 border-gray-200"
-                                }`}>
-                                   {Admin.ROL_LABEL[u.rol_id] ?? "Rol Desconocido"}
-                                </span>
-                             </td>
-                             <td className="px-6 py-4">
-                                <span className={`flex items-center gap-1.5 text-xs font-medium ${
-                                   u.estado === 'activo' ? 'text-emerald-600' : 'text-red-600'
-                                }`}>
-                                   <span className={`w-1.5 h-1.5 rounded-full ${u.estado === 'activo' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                                   {u.estado.charAt(0).toUpperCase() + u.estado.slice(1)}
-                                </span>
-                             </td>
-                             <td className="px-6 py-4 text-right">
-                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                   <button 
-                                      onClick={()=>setEdit({ id:u.id, email:u.email, full_name:u.full_name||"", rol_id:u.rol_id })}
-                                      className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                                      title="Editar"
-                                   >
-                                      <Edit2 size={16} />
-                                   </button>
-                                   <button 
-                                      onClick={()=>handleSuspend(u.id)}
-                                      className="p-2 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                                      title="Suspender"
-                                   >
-                                      <ShieldAlert size={16} />
-                                   </button>
-                                   <button 
-                                      onClick={()=>handleDelete(u.id)}
-                                      className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                      title="Eliminar"
-                                   >
-                                      <Trash2 size={16} />
-                                   </button>
+                                <div className="p-3">
+                                    <h3 className="font-semibold text-gray-900 truncate mb-1">{p.titulo}</h3>
+                                    <span className="text-violet-600 font-bold text-sm">{p.valor_creditos} Cr</span>
                                 </div>
-                             </td>
-                          </tr>
-                       ))}
-                    </tbody>
-                 </table>
-                 {!filteredRows.length && (
-                    <div className="p-12 text-center text-gray-400">
-                       No se encontraron usuarios que coincidan con la búsqueda.
+                            </Link>
+                        ))}
+                        {!data?.publicaciones.length && <EmptyState icon={<Package size={32}/>} msg="No tienes publicaciones." />}
                     </div>
-                 )}
-              </div>
-           )}
-        </div>
+                )}
 
-        {/* --- MODAL CREAR --- */}
-        {showCreate && (
-           <Modal title="Nuevo Usuario" onClose={() => setShowCreate(false)}>
-                <form onSubmit={handleCreate} className="space-y-4">
-                 <Input label="Nombre Completo" value={form.full_name} onChange={v => setForm({...form, full_name: v})} placeholder="Ej. Juan Pérez" />
-                 <Input label="Correo Electrónico" value={form.email} onChange={v => setForm({...form, email: v})} placeholder="correo@ejemplo.com" />
-                 <Input label="Contraseña" value={form.password} onChange={v => setForm({...form, password: v})} placeholder="••••••" type="password" />
-                 
-                 <div className="space-y-1">
-                  <label className="text-sm font-bold text-gray-600 ml-1">Rol</label>
-                  <select 
-                     className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:ring-2 focus:ring-emerald-100"
-                     value={form.rol_id} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setForm({...form,rol_id:Number(e.target.value)})}
-                  >
-                     {roles.map((r: {id: number; label: string}) => <option key={r.id} value={r.id}>{r.label}</option>)}
-                  </select>
-                 </div>
+                {/* FAVORITOS */}
+                {tab === "favs" && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                        {data?.favoritos && data.favoritos.map((p) => (
+                            <Link to={`/market/${p.id}`} key={p.id} className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all">
+                                <div className="aspect-4/3 bg-gray-100 relative overflow-hidden">
+                                    {p.foto_principal ? (
+                                        <img src={p.foto_principal} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                    ) : ( <div className="w-full h-full flex items-center justify-center text-gray-300"><Package size={24}/></div> )}
+                                    <div className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow-sm text-red-500"><Heart size={14} className="fill-current"/></div>
+                                </div>
+                                <div className="p-3">
+                                    <h3 className="font-semibold text-gray-900 truncate mb-1">{p.titulo}</h3>
+                                    <span className="text-violet-600 font-bold text-sm">{p.valor_creditos} Cr</span>
+                                </div>
+                            </Link>
+                        ))}
+                        {(!data?.favoritos || !data.favoritos.length) && <EmptyState icon={<Heart size={32}/>} msg="No tienes favoritos." />}
+                    </div>
+                )}
 
-                 <div className="pt-4 flex gap-3">
-                  <button type="button" onClick={() => setShowCreate(false)} className="flex-1 py-3 rounded-xl border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50">Cancelar</button>
-                  <button className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-bold hover:bg-emerald-600 transition-colors shadow-lg">Crear Usuario</button>
-                 </div>
-                </form>
-           </Modal>
-        )}
+                {/* HISTORIAL */}
+                {tab === "movs" && (
+                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-50 text-gray-400 uppercase text-xs">
+                                <tr><th className="px-6 py-3">Fecha</th><th className="px-6 py-3">Detalle</th><th className="px-6 py-3 text-right">Monto</th></tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {data?.movimientos.map(m => (
+                                    <tr key={m.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-3 text-gray-500">{new Date(m.fecha_movimiento).toLocaleDateString()}</td>
+                                        <td className="px-6 py-3">
+                                            <p className="font-medium text-gray-900">{m.tipo_codigo}</p>
+                                            <p className="text-xs text-gray-500 truncate max-w-[200px]">{m.descripcion}</p>
+                                        </td>
+                                        <td className={`px-6 py-3 text-right font-bold ${m.monto_con_signo > 0 ? 'text-violet-600' : 'text-gray-900'}`}>
+                                            {m.monto_con_signo > 0 ? '+' : ''}{m.monto_con_signo}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {!data?.movimientos.length && <EmptyState icon={<History size={32}/>} msg="Sin movimientos." />}
+                    </div>
+                )}
 
-        {/* --- MODAL EDITAR --- */}
-        {edit && (
-           <Modal title={`Editar Usuario #${edit.id}`} onClose={() => setEdit(null)}>
-              <div className="space-y-4">
-                 <Input label="Nombre Completo" value={edit.full_name} onChange={v => setEdit({...edit, full_name: v})} />
-                 <Input label="Correo Electrónico" value={edit.email} onChange={v => setEdit({...edit, email: v})} />
-                 
-                 <div className="space-y-1">
-                    <label className="text-sm font-bold text-gray-600 ml-1">Rol</label>
-                    <select 
-                       className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:ring-2 focus:ring-emerald-100"
-                       value={edit.rol_id} onChange={e=>setEdit({...edit,rol_id:Number(e.target.value)})}
-                    >
-                       {roles.map(r=> <option key={r.id} value={r.id}>{r.label}</option>)}
-                    </select>
-                 </div>
+                {/* IMPACTO */}
+                {tab === "impact" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <ImpactCard label="Residuos Evitados" value={Number(data?.impacto?.total_residuos_evitados?? 0)} unit="u" icon="🗑️" />
+                        <ImpactCard label="CO₂ Evitado" value={Number(data?.impacto?.total_co2_evitado ?? 0)} unit="kg" icon="☁️" color="emerald" />
+                        <ImpactCard label="Energía" value={Number(data?.impacto?.total_energia_ahorrada ?? 0)} unit="kWh" icon="⚡" color="amber" />
+                        <ImpactCard label="Agua" value={Number(data?.impacto?.total_agua_preservada ?? 0)} unit="L" icon="💧" color="blue" />
+                    </div>
+                )}
 
-                 <div className="pt-4 flex gap-3">
-                    <button onClick={() => setEdit(null)} className="flex-1 py-3 rounded-xl border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50">Cancelar</button>
-                    <button onClick={handleSaveEdit} className="flex-1 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-colors shadow-lg">Guardar Cambios</button>
-                 </div>
-              </div>
-           </Modal>
-        )}
+                {/* RESEÑAS */}
+                {tab === "reviews" && (
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {data?.reviews?.length ? data.reviews.map(r => (
+                            <div key={r.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                <div className="flex justify-between mb-2">
+                                    <span className="font-bold text-sm">{r.autor_nombre}</span>
+                                    <div className="flex text-amber-400"><Star size={12} className="fill-current"/> <span className="text-xs text-gray-500 ml-1">{r.calificacion}</span></div>
+                                </div>
+                                <p className="text-sm text-gray-600 italic">"{r.comentario}"</p>
+                            </div>
+                        )) : <EmptyState icon={<MessageSquare size={32}/>} msg="Sin reseñas." />}
+                    </div>
+                )}
+
+            </div>
+        </section>
 
       </main>
     </div>
@@ -303,43 +247,60 @@ export default function AdminUsers() {
 
 // --- SUBCOMPONENTES ---
 
-function Modal({ title, children, onClose }: { title: string, children: React.ReactNode, onClose: () => void }) {
-   return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in">
-         <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-               <h3 className="font-bold text-lg text-gray-900">{title}</h3>
-               <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"><X size={20}/></button>
+function AdminToolCard({ to, title, desc, icon, color }: any) {
+    const colors: any = {
+        violet: "bg-violet-50 text-violet-600 group-hover:bg-violet-600 group-hover:text-white",
+        blue:   "bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white",
+        amber:  "bg-amber-50 text-amber-600 group-hover:bg-amber-500 group-hover:text-white",
+        rose:   "bg-rose-50 text-rose-600 group-hover:bg-rose-500 group-hover:text-white",
+    };
+    return (
+        <Link to={to} className="group bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${colors[color]}`}>
+                {icon}
             </div>
-            <div className="p-6">
-               {children}
+            <div>
+                <h3 className="font-bold text-gray-900 group-hover:text-violet-700 transition-colors">{title}</h3>
+                <p className="text-xs text-gray-500">{desc}</p>
             </div>
-         </div>
-      </div>
-   )
+        </Link>
+    );
 }
 
-// Definimos la interfaz para que TS sepa qué esperar
-interface InputProps {
-  label: string;
-  value: string | number; // Aceptamos texto o números
-  onChange: (value: string) => void; // Explicamos que devuelve un string
-  placeholder?: string;
-  type?: string;
-}
+function TabButton({ label, active, onClick, icon }: any) {
+    return (
+       <button onClick={onClick} className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+             active ? "bg-violet-100 text-violet-700" : "text-gray-500 hover:bg-gray-100"
+          }`}
+       >
+          {icon} {label}
+       </button>
+    );
+ }
 
-function Input({ label, value, onChange, placeholder, type = "text" }: InputProps) {
-  return (
-    <div className="space-y-1">
-      <label className="text-sm font-bold text-gray-600 ml-1">{label}</label>
-      <input
-        type={type}
-        className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all placeholder:text-gray-400"
-        value={value}
-        // Aquí extraemos el value del evento y se lo pasamos limpio al padre
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-      />
-    </div>
-  );
-}
+ function ImpactCard({ label, value, unit, icon, color = "gray" }: any) {
+    const colors: any = {
+       emerald: "border-emerald-200 bg-emerald-50",
+       amber: "border-amber-200 bg-amber-50",
+       blue: "border-blue-200 bg-blue-50",
+       gray: "border-gray-200 bg-gray-50"
+    };
+    return (
+       <div className={`p-4 rounded-xl border ${colors[color]} flex items-center justify-between`}>
+          <div>
+             <p className="text-2xl font-bold">{value} <span className="text-xs opacity-60">{unit}</span></p>
+             <p className="text-[10px] font-bold uppercase tracking-wider opacity-70">{label}</p>
+          </div>
+          <div className="text-2xl opacity-80 grayscale-30%">{icon}</div>
+       </div>
+    )
+ }
+ 
+ function EmptyState({ icon, msg }: { icon: React.ReactNode, msg: string }) {
+    return (
+       <div className="col-span-full py-12 flex flex-col items-center justify-center text-center opacity-60">
+          <div className="mb-2">{icon}</div>
+          <p className="text-sm font-medium">{msg}</p>
+       </div>
+    )
+ }
